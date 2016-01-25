@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:fitsSystemWindows="true"
+    tools:context=".MainActivity"
+    android:id="@+id/background"
+    android:background="@mipmap/background">
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Intelligence_WorkOut"
+        android:id="@+id/textView2"
+        android:textColor="#01020b"
+        android:textIsSelectable="false"
+        android:textSize="30dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="54dp" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start"
+        android:background="#cf2e46"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:shadowColor="@color/abc_search_url_text_normal"
+        android:id="@+id/button28"
+        android:onClick="onClick"/>
+
+</RelativeLayout>
