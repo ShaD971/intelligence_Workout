@@ -1,2 +1,3 @@
 # intelligence_Workout
-android game
+Sample android game
+
