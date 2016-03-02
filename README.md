@@ -10,4 +10,4 @@ Le principe du jeu Intelligence WorkOut est assez simple. Vous avez une aire de 
 </p>
 <p align="center">
   <img src="https://github.com/ShaD971/intelligence_Workout/blob/master/intelligenceWorkoutGame.png" alt="Screenshot"/>
-</p>s
+</p>
