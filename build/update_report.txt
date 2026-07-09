@@ -1,0 +1,31 @@
+Update report - Intelligence WorkOut
+
+Fichiers modifies
+- README.md
+- .gitignore
+- app/src/main/res/values/styles.xml
+- app/src/main/res/values/colors.xml
+- app/src/main/res/values-night/colors.xml
+- app/src/main/res/layout/activity_main.xml
+- app/src/main/res/layout/main.xml
+- app/src/main/java/com/example/shad/projetosnomade/IntelligenceWorkout_Activity.java
+- app/src/main/java/com/example/shad/projetosnomade/IntelligenceWorkoutView.java
+
+Fonctionnalites ajoutees
+- ActionBar retiree avec theme plein ecran.
+- Logo ajoute a l'accueil.
+- Temps ecoule ajoute au HUD de jeu.
+- Dialogue de victoire affiche "Bravo !", niveau, temps, deplacements et score final.
+- Bonus final conserve et affiche dans le score final.
+- Palette sombre minimale ajoutee via values-night.
+
+Captures creees
+- docs/screenshots/home.png
+- docs/screenshots/game.png
+- docs/screenshots/victory.png reste a capturer si absent.
+
+Erreurs corrigees
+- Aucune erreur bloquante corrigee. La compilation signale seulement un avertissement Java deprecation non bloquant.
+
+Resultat compilation
+- .\gradlew assembleDebug : BUILD SUCCESSFUL.

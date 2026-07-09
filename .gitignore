@@ -1,8 +1,24 @@
+# Gradle
+.gradle/
+/build/*
+!/build/modernization_report.txt
+!/build/difficulty_update_report.txt
+!/build/ui_gameplay_update_report.txt
+!/build/update_report.txt
+!/build/update_report.txt
+
+# Android Studio / IntelliJ
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/workspace.xml
-/.idea/libraries
+
+# Local machine state
+local.properties
 .DS_Store
-/build
-/captures
+
+# Android build output
+app/build/
+captures/
+*.apk
+*.ap_
+*.aab
+*.dex
