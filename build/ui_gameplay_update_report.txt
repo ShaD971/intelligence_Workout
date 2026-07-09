@@ -1,0 +1,68 @@
+intelligence_Workout UI and gameplay update report
+Generated: 2026-07-09
+
+Modified files
+- .gitignore
+- README.md
+- app/src/main/res/drawable/button_primary.xml
+- app/src/main/res/drawable/button_secondary.xml
+- app/src/main/res/drawable/button_selected.xml
+- app/src/main/res/drawable/panel_background.xml
+- app/src/main/res/layout/activity_main.xml
+- app/src/main/res/layout/main.xml
+- app/src/main/java/com/example/shad/projetosnomade/Start_Activity.java
+- app/src/main/java/com/example/shad/projetosnomade/IntelligenceWorkout_Activity.java
+- app/src/main/java/com/example/shad/projetosnomade/IntelligenceWorkoutView.java
+- build/ui_gameplay_update_report.txt
+
+Features added
+- Selectable difficulty levels: Facile, Moyen, Difficile.
+- Modernized start screen with title, short game description, difficulty buttons, and a Commencer button.
+- Game HUD with difficulty, score, movement count, status text, visible Reinitialiser button, and visible Accueil button.
+- Dynamic grid sizing for 3x3, 5x5, and 6x6 boards.
+- Target pattern and starting grid generated from the selected difficulty.
+- Victory dialog with difficulty, movement count, final score, Rejouer, and Retour a l'accueil actions.
+
+Score behavior
+- Facile starts at 120 points, loses 4 points per row or column move, and receives a moderate 60 point victory bonus.
+- Moyen starts at 220 points, loses 8 points per row or column move, and receives an important 140 point victory bonus.
+- Difficile starts at 360 points, loses 12 points per row or column move, and receives a large 280 point victory bonus.
+- Each actual row or column rotation increments the move counter.
+- A quick-move bonus is added when the player finishes with few movements.
+- Quick-move bonus values also depend on difficulty: 15, 30, or 50 points per remaining expected move window.
+
+Reset button behavior
+- The Reinitialiser button is visible during gameplay.
+- It restores the original grid for the selected difficulty.
+- It resets the score to the selected difficulty's starting score.
+- It resets the movement counter to zero.
+- It keeps the current difficulty selection.
+
+Home button behavior
+- The Accueil button is visible during gameplay.
+- It calls finish() on the game activity so Android returns cleanly to the existing selection screen.
+- It does not kill the process or close the app abruptly.
+
+Victory dialog behavior
+- The message starts with: Bravo, vous avez reussi le niveau !
+- It displays the difficulty played, movement count, and final score.
+- Rejouer resets the current difficulty and starts the same level again.
+- Retour a l'accueil closes the game activity and returns to the selection screen.
+
+Modernized interface
+- The start screen uses a centered panel, clearer spacing, readable text, and dedicated difficulty buttons.
+- The game screen uses a top HUD rather than drawing all game state inside the canvas.
+- Buttons use shared shape drawables for more consistent visual styling.
+- The SurfaceView remains responsible for the block grid and target rendering.
+- Material Components were not added because the project is intentionally lightweight and builds without AndroidX dependencies.
+
+Tests executed
+- .\gradlew.bat clean: BUILD SUCCESSFUL
+- .\gradlew.bat assembleDebug: BUILD SUCCESSFUL
+- .\gradlew.bat test: BUILD SUCCESSFUL
+
+Final result
+- The app builds successfully.
+- The debug APK is generated successfully.
+- Unit tests run successfully.
+- No git commit, git push, git reset, git clean, git merge, git rebase, or git tag command was executed.
