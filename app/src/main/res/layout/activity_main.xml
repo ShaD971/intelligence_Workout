@@ -31,15 +31,15 @@
                 android:id="@+id/gameLogo"
                 android:layout_width="64dp"
                 android:layout_height="64dp"
-                android:contentDescription="Logo Intelligence WorkOut"
+                android:contentDescription="@string/content_description_logo"
                 android:src="@mipmap/ic_launcher" />
 
             <TextView
-                android:id="@+id/textView2"
+                android:id="@+id/appTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="Intelligence WorkOut"
+                android:text="@string/app_name"
                 android:textColor="#17212B"
                 android:textIsSelectable="false"
                 android:textSize="30sp"
@@ -52,7 +52,7 @@
                 android:layout_marginTop="14dp"
                 android:gravity="center"
                 android:lineSpacingExtra="3dp"
-                android:text="Deplacez une ligne ou une colonne pour reproduire la forme cible."
+                android:text="@string/app_description"
                 android:textColor="#263238"
                 android:textSize="16sp" />
 
@@ -61,7 +61,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
-                android:text="Choisissez un niveau"
+                android:text="@string/choose_level_label"
                 android:textColor="#17212B"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -79,7 +79,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/button_secondary"
-                    android:text="Facile"
+                    android:text="@string/difficulty_easy"
                     android:textAllCaps="false"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
@@ -90,7 +90,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/button_selected"
-                    android:text="Moyen"
+                    android:text="@string/difficulty_medium"
                     android:textAllCaps="false"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
@@ -101,20 +101,19 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/button_secondary"
-                    android:text="Difficile"
+                    android:text="@string/difficulty_hard"
                     android:textAllCaps="false"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
             </LinearLayout>
 
             <Button
-                android:id="@+id/button28"
+                android:id="@+id/startButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:background="@drawable/button_primary"
-                android:onClick="onClick"
-                android:text="Commencer"
+                android:text="@string/action_start"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white"
                 android:textSize="18sp"

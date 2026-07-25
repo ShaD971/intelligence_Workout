@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#20262C"
@@ -24,37 +25,37 @@
                 android:id="@+id/gameDifficulty"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Moyen"
                 android:textColor="#17212B"
                 android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                tools:text="Moyen" />
 
             <TextView
                 android:id="@+id/gameScore"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Score : 0"
                 android:textColor="#263238"
-                android:textSize="16sp" />
+                android:textSize="16sp"
+                tools:text="Score : 0" />
 
             <TextView
                 android:id="@+id/gameTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Temps : 0s"
                 android:textColor="#263238"
-                android:textSize="16sp" />
+                android:textSize="16sp"
+                tools:text="Temps : 0s" />
 
             <TextView
                 android:id="@+id/gameStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Reproduisez la cible"
                 android:textColor="#546E7A"
-                android:textSize="13sp" />
+                android:textSize="13sp"
+                tools:text="Reproduisez la cible" />
         </LinearLayout>
 
         <LinearLayout
@@ -68,7 +69,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/button_primary"
-                android:text="Réinitialiser"
+                android:text="@string/action_reset"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white" />
 
@@ -78,7 +79,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/button_secondary"
-                android:text="Accueil"
+                android:text="@string/action_home"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white" />
         </LinearLayout>

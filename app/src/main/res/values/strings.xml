@@ -1,3 +1,27 @@
 <resources>
-    <string name="app_name">projetOSnomade</string>
+    <string name="app_name">Intelligence WorkOut</string>
+
+    <!-- Home screen -->
+    <string name="content_description_logo">Logo Intelligence WorkOut</string>
+    <string name="app_description">Deplacez une ligne ou une colonne pour reproduire la forme cible.</string>
+    <string name="choose_level_label">Choisissez un niveau</string>
+    <string name="difficulty_easy">Facile</string>
+    <string name="difficulty_medium">Moyen</string>
+    <string name="difficulty_hard">Difficile</string>
+    <string name="action_start">Commencer</string>
+
+    <!-- Game screen -->
+    <string name="action_reset">Réinitialiser</string>
+    <string name="action_home">Accueil</string>
+    <string name="game_level_format">Niveau : %1$s</string>
+    <string name="game_score_format">Score : %1$d</string>
+    <string name="game_time_format">Temps : %1$ds</string>
+    <string name="game_status_playing">Mouvements : %1$d - reproduisez la cible</string>
+    <string name="game_status_won">Reussi en %1$d mouvements. Score final : %2$d</string>
+
+    <!-- Victory dialog -->
+    <string name="victory_title">Bravo !</string>
+    <string name="victory_message">Bravo, vous avez reussi le niveau !\n\nNiveau : %1$s\nTemps : %2$ds\nMouvements : %3$d\nScore final : %4$d</string>
+    <string name="action_replay">Rejouer</string>
+    <string name="action_back_to_home">Retour accueil</string>
 </resources>

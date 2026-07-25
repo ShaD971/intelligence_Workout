@@ -1,34 +1,30 @@
 package com.example.shad.projetosnomade;
 
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
-import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.shad.projetosnomade.databinding.MainBinding;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 /**
  * Created by shad on 18/12/15.
  */
-public class IntelligenceWorkout_Activity extends Activity
+public class IntelligenceWorkout_Activity extends AppCompatActivity
         implements IntelligenceWorkoutView.GameStateListener {
 
     public static final String EXTRA_DIFFICULTY = "com.example.shad.projetosnomade.DIFFICULTY";
 
-    private IntelligenceWorkoutView intelligenceWorkoutView;
-    private TextView difficultyText;
-    private TextView scoreText;
-    private TextView timeText;
-    private TextView statusText;
+    private MainBinding binding;
     private boolean victoryDialogShown;
-    private final Handler timerHandler = new Handler();
+    private final Handler timerHandler = new Handler(Looper.getMainLooper());
     private final Runnable timerTick = new Runnable() {
         @Override
         public void run() {
-            if (intelligenceWorkoutView != null) {
-                timeText.setText("Temps : " + intelligenceWorkoutView.getElapsedSeconds() + "s");
-            }
+            binding.gameTime.setText(getString(R.string.game_time_format, binding.view.getElapsedSeconds()));
             timerHandler.postDelayed(this, 1000);
         }
     };
@@ -37,46 +33,34 @@ public class IntelligenceWorkout_Activity extends Activity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.main);
-        difficultyText = (TextView) findViewById(R.id.gameDifficulty);
-        scoreText = (TextView) findViewById(R.id.gameScore);
-        timeText = (TextView) findViewById(R.id.gameTime);
-        statusText = (TextView) findViewById(R.id.gameStatus);
+        binding = MainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
-        intelligenceWorkoutView = (IntelligenceWorkoutView) findViewById(R.id.view);
-        intelligenceWorkoutView.setGameStateListener(this);
-        intelligenceWorkoutView.setDifficulty(getIntent().getStringExtra(EXTRA_DIFFICULTY));
-        intelligenceWorkoutView.setVisibility(View.VISIBLE);
+        binding.view.setGameStateListener(this);
+        binding.view.setDifficulty(getIntent().getStringExtra(EXTRA_DIFFICULTY));
+        binding.view.setVisibility(View.VISIBLE);
 
-        findViewById(R.id.resetButton).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                victoryDialogShown = false;
-                intelligenceWorkoutView.resetGame();
-            }
+        binding.resetButton.setOnClickListener(v -> {
+            victoryDialogShown = false;
+            binding.view.resetGame();
         });
 
-        findViewById(R.id.homeButton).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
+        binding.homeButton.setOnClickListener(v -> finish());
 
         timerHandler.post(timerTick);
     }
 
     @Override
     public void onGameStateChanged(String difficultyLabel, int score, int moves, int elapsedSeconds, boolean gameWon) {
-        difficultyText.setText("Niveau : " + difficultyLabel);
-        scoreText.setText("Score : " + score);
-        timeText.setText("Temps : " + elapsedSeconds + "s");
+        binding.gameDifficulty.setText(getString(R.string.game_level_format, difficultyLabel));
+        binding.gameScore.setText(getString(R.string.game_score_format, score));
+        binding.gameTime.setText(getString(R.string.game_time_format, elapsedSeconds));
         if (gameWon) {
-            statusText.setText("Reussi en " + moves + " mouvements. Score final : " + score);
+            binding.gameStatus.setText(getString(R.string.game_status_won, moves, score));
             showVictoryDialog(difficultyLabel, score, moves, elapsedSeconds);
         } else {
             victoryDialogShown = false;
-            statusText.setText("Mouvements : " + moves + " - reproduisez la cible");
+            binding.gameStatus.setText(getString(R.string.game_status_playing, moves));
         }
     }
 
@@ -86,28 +70,16 @@ public class IntelligenceWorkout_Activity extends Activity
         }
         victoryDialogShown = true;
 
-        String message = "Bravo, vous avez reussi le niveau !\n\n"
-                + "Niveau : " + difficultyLabel + "\n"
-                + "Temps : " + elapsedSeconds + "s\n"
-                + "Mouvements : " + moves + "\n"
-                + "Score final : " + score;
+        String message = getString(R.string.victory_message, difficultyLabel, elapsedSeconds, moves, score);
 
-        new AlertDialog.Builder(this)
-                .setTitle("Bravo !")
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.victory_title)
                 .setMessage(message)
-                .setPositiveButton("Rejouer", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        victoryDialogShown = false;
-                        intelligenceWorkoutView.resetGame();
-                    }
+                .setPositiveButton(R.string.action_replay, (dialog, which) -> {
+                    victoryDialogShown = false;
+                    binding.view.resetGame();
                 })
-                .setNegativeButton("Retour accueil", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        finish();
-                    }
-                })
+                .setNegativeButton(R.string.action_back_to_home, (dialog, which) -> finish())
                 .setCancelable(false)
                 .show();
     }
