@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#0B7FAB</color>
-    <color name="colorPrimaryDark">#17212B</color>
-    <color name="colorAccent">#D62D49</color>
+    <color name="iw_background">#F2F5F9</color>
+    <color name="iw_surface">#FFFFFF</color>
+    <color name="iw_surface_variant">#E4EAF2</color>
+    <color name="iw_on_surface">#17212B</color>
+    <color name="iw_on_surface_muted">#5B6B7A</color>
+    <color name="iw_primary">#0B7FAB</color>
+    <color name="iw_accent">#D62D49</color>
+    <color name="iw_tile_blue_start">#2E7FD1</color>
+    <color name="iw_tile_blue_end">#1F5FA8</color>
+    <color name="iw_tile_red_start">#E0475F</color>
+    <color name="iw_tile_red_end">#B02840</color>
+    <color name="iw_gold">#FFC107</color>
+    <color name="iw_locked">#B0BAC5</color>
 </resources>

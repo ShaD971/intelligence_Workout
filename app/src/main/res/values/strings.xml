@@ -1,3 +1,63 @@
 <resources>
-    <string name="app_name">projetOSnomade</string>
+    <string name="app_name">Intelligence WorkOut</string>
+
+    <!-- Home screen -->
+    <string name="content_description_logo">Logo Intelligence WorkOut</string>
+    <string name="app_description">Deplacez une ligne ou une colonne pour reproduire la forme cible.</string>
+    <string name="difficulty_easy">Facile</string>
+    <string name="difficulty_medium">Moyen</string>
+    <string name="difficulty_hard">Difficile</string>
+    <string name="stars_total_format">★ %1$d / %2$d</string>
+    <string name="tier_progress_format">%1$d / 9 ★</string>
+    <string name="action_reset_progress">Réinitialiser la progression</string>
+    <string name="reset_progress_confirm_title">Réinitialiser la progression ?</string>
+    <string name="reset_progress_confirm_message">Toutes les étoiles, meilleurs scores et niveaux débloqués seront perdus.</string>
+    <string name="action_confirm">Réinitialiser</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_how_to_play">Comment jouer ?</string>
+    <string name="how_to_play_title">Comment jouer ?</string>
+    <string name="how_to_play_body">Faites glisser une ligne ou une colonne pour la faire tourner et reproduire la grille cible affichée en haut.\n\nChaque coup coûte quelques points, mais finir vite en rapporte beaucoup plus. Reproduisez la cible pour gagner jusqu\'à 3 étoiles selon le nombre de coups utilisés.</string>
+    <string name="content_description_lock">Niveau verrouillé</string>
+    <string name="content_description_undo">Annuler le dernier coup</string>
+    <string name="content_description_reset">Réinitialiser la grille</string>
+    <string name="content_description_home">Retour à l\'accueil</string>
+
+    <!-- Level select screen -->
+    <string name="level_select_title_format">Niveaux %1$s</string>
+    <string name="level_card_title_format">%1$d. %2$s</string>
+    <string name="content_description_level_preview">Aperçu de la grille cible</string>
+    <string name="best_score_format">Meilleur score : %1$d</string>
+
+    <!-- Game screen -->
+    <string name="hud_label_moves">Coups</string>
+    <string name="hud_label_time">Temps</string>
+    <string name="hud_label_score">Score</string>
+    <string name="hud_label_target">Cible</string>
+    <string name="game_level_format">Niveau : %1$s</string>
+    <string name="game_time_value_format">%1$ds</string>
+    <string name="game_status_playing">Mouvements : %1$d - reproduisez la cible</string>
+    <string name="game_status_won">Reussi en %1$d mouvements. Score final : %2$d</string>
+    <string name="content_description_hint">Indice</string>
+    <string name="content_description_grid_format">Grille %1$d sur %2$d, %3$d tuiles bien placées sur %4$d</string>
+
+    <!-- Level names -->
+    <string name="level_name_easy_1">Croix</string>
+    <string name="level_name_easy_2">Diagonale</string>
+    <string name="level_name_easy_3">Damier</string>
+    <string name="level_name_medium_1">Cadre</string>
+    <string name="level_name_medium_2">Sablier</string>
+    <string name="level_name_medium_3">Viseur</string>
+    <string name="level_name_hard_1">Nœud papillon</string>
+    <string name="level_name_hard_2">Spirale</string>
+    <string name="level_name_hard_3">Zébré</string>
+
+    <!-- Victory sheet -->
+    <string name="victory_title">Bravo !</string>
+    <string name="victory_time_format">Temps : %1$ds</string>
+    <string name="victory_moves_format">Coups : %1$d</string>
+    <string name="victory_score_format">Score : %1$d</string>
+    <string name="victory_new_record">Nouveau record !</string>
+    <string name="action_next_level">Niveau suivant</string>
+    <string name="action_replay">Rejouer</string>
+    <string name="action_back_to_home">Retour accueil</string>
 </resources>
