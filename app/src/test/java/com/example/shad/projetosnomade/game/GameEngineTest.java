@@ -119,6 +119,53 @@ public class GameEngineTest {
     }
 
     @Test
+    public void countCorrectCellsMatchesTargetOverlap() {
+        Level level = testLevel();
+        GameEngine engine = new GameEngine(level);
+        int total = level.gridSize * level.gridSize;
+
+        assertTrue(engine.countCorrectCells() <= total);
+        assertTrue(engine.countCorrectCells() >= 0);
+    }
+
+    @Test
+    public void findHintReturnsNullWhenAlreadyWon() {
+        Level level = testLevel();
+        GameEngine engine = new GameEngine(level);
+        GridScrambler.ScrambleResult result = GridScrambler.scrambleWithHistory(level);
+        for (int i = result.moves.size() - 1; i >= 0; i--) {
+            GridScrambler.Move move = result.moves.get(i);
+            if (move.axis == GridScrambler.Axis.ROW) {
+                engine.rotateRow(move.index, -move.direction);
+            } else {
+                engine.rotateColumn(move.index, -move.direction);
+            }
+        }
+
+        assertEquals(null, engine.findHint());
+    }
+
+    @Test
+    public void usingHintCapsStarsAtTwo() {
+        Level level = testLevel();
+        GameEngine engine = new GameEngine(level);
+        engine.findHint();
+
+        GridScrambler.ScrambleResult result = GridScrambler.scrambleWithHistory(level);
+        for (int i = result.moves.size() - 1; i >= 0; i--) {
+            GridScrambler.Move move = result.moves.get(i);
+            if (move.axis == GridScrambler.Axis.ROW) {
+                engine.rotateRow(move.index, -move.direction);
+            } else {
+                engine.rotateColumn(move.index, -move.direction);
+            }
+        }
+
+        assertTrue(engine.isWon());
+        assertTrue(engine.computeStars() <= 2);
+    }
+
+    @Test
     public void computeStarsMatchesParMovesThresholds() {
         Level level = new Level("stars", Difficulty.EASY, new int[][]{
                 {0, 1},

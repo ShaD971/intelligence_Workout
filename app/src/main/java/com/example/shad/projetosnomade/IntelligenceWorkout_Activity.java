@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityOptionsCompat;
 
 import com.example.shad.projetosnomade.databinding.MainBinding;
 import com.example.shad.projetosnomade.game.Level;
@@ -72,13 +73,24 @@ public class IntelligenceWorkout_Activity extends AppCompatActivity
         binding.targetPreview.setTarget(binding.view.getTarget());
 
         binding.undoButton.setOnClickListener(v -> binding.view.undo());
+        binding.hintButton.setOnClickListener(v -> binding.view.requestHint());
         binding.resetButton.setOnClickListener(v -> {
             victoryDialogShown = false;
             binding.view.resetGame();
         });
         binding.homeButton.setOnClickListener(v -> finish());
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
         timerHandler.post(timerTick);
+    }
+
+    @Override
+    protected void onPause() {
+        timerHandler.removeCallbacks(timerTick);
+        super.onPause();
     }
 
     @Override
@@ -154,7 +166,9 @@ public class IntelligenceWorkout_Activity extends AppCompatActivity
                 dialog.dismiss();
                 Intent intent = new Intent(this, IntelligenceWorkout_Activity.class);
                 intent.putExtra(EXTRA_LEVEL_ID, target.id);
-                startActivity(intent);
+                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                        this, android.R.anim.fade_in, android.R.anim.fade_out);
+                startActivity(intent, options.toBundle());
                 finish();
             });
         } else {

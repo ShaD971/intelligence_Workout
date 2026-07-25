@@ -188,6 +188,15 @@
             app:icon="@drawable/ic_undo" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/hintButton"
+            style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:contentDescription="@string/content_description_hint"
+            app:icon="@drawable/ic_hint" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/resetButton"
             style="@style/Widget.Material3.Button.OutlinedButton.Icon"
             android:layout_width="wrap_content"

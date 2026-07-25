@@ -37,6 +37,16 @@ public final class GameEngine {
         }
     }
 
+    public static final class HintTarget {
+        public final Axis axis;
+        public final int index;
+
+        public HintTarget(Axis axis, int index) {
+            this.axis = axis;
+            this.index = index;
+        }
+    }
+
     private final Level level;
     private int[][] grid;
     private final Deque<HistoryEntry> history = new ArrayDeque<>();
@@ -44,6 +54,7 @@ public final class GameEngine {
     private int score;
     private long elapsedMillis;
     private boolean won;
+    private boolean hintUsed;
 
     public GameEngine(Level level) {
         this(level, GridScrambler.scramble(level), 0, level.difficulty.startScore, 0L, false);
@@ -151,19 +162,90 @@ public final class GameEngine {
         score = level.difficulty.startScore;
         elapsedMillis = 0;
         won = false;
+        hintUsed = false;
     }
 
     public int computeStars() {
         if (!won) {
             return 0;
         }
+        int stars;
         if (moves <= level.parMoves) {
-            return 3;
+            stars = 3;
+        } else if (moves <= level.parMoves * 1.5) {
+            stars = 2;
+        } else {
+            stars = 1;
         }
-        if (moves <= level.parMoves * 1.5) {
-            return 2;
+        return hintUsed ? Math.min(stars, 2) : stars;
+    }
+
+    /** Number of cells already matching the target, for accessibility summaries. */
+    public int countCorrectCells() {
+        int[][] target = level.target;
+        int correct = 0;
+        for (int row = 0; row < grid.length; row++) {
+            for (int column = 0; column < grid[row].length; column++) {
+                if (grid[row][column] == target[row][column]) {
+                    correct++;
+                }
+            }
         }
-        return 1;
+        return correct;
+    }
+
+    /**
+     * Picks the row or column with the fewest mismatched cells (excluding lines that are
+     * already correct) as a simple, honest "closest to done" heuristic - not a guaranteed
+     * optimal next move, which would require a full puzzle solver.
+     */
+    public HintTarget findHint() {
+        hintUsed = true;
+        int gridSize = level.gridSize;
+        Axis bestAxis = null;
+        int bestIndex = -1;
+        int bestMismatches = Integer.MAX_VALUE;
+
+        for (int row = 0; row < gridSize; row++) {
+            int mismatches = countRowMismatches(row);
+            if (mismatches > 0 && mismatches < bestMismatches) {
+                bestMismatches = mismatches;
+                bestAxis = Axis.ROW;
+                bestIndex = row;
+            }
+        }
+        for (int column = 0; column < gridSize; column++) {
+            int mismatches = countColumnMismatches(column);
+            if (mismatches > 0 && mismatches < bestMismatches) {
+                bestMismatches = mismatches;
+                bestAxis = Axis.COLUMN;
+                bestIndex = column;
+            }
+        }
+
+        return bestAxis == null ? null : new HintTarget(bestAxis, bestIndex);
+    }
+
+    private int countRowMismatches(int row) {
+        int[][] target = level.target;
+        int mismatches = 0;
+        for (int column = 0; column < grid[row].length; column++) {
+            if (grid[row][column] != target[row][column]) {
+                mismatches++;
+            }
+        }
+        return mismatches;
+    }
+
+    private int countColumnMismatches(int column) {
+        int[][] target = level.target;
+        int mismatches = 0;
+        for (int row = 0; row < grid.length; row++) {
+            if (grid[row][column] != target[row][column]) {
+                mismatches++;
+            }
+        }
+        return mismatches;
     }
 
     private void applyMove(Axis axis, int index, int steps) {

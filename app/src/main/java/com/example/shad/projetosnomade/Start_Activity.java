@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.shad.projetosnomade.databinding.ActivityMainBinding;
@@ -55,7 +56,9 @@ public class Start_Activity extends AppCompatActivity {
     private void openLevelSelect(Difficulty difficulty) {
         Intent intent = new Intent(this, LevelSelectActivity.class);
         intent.putExtra(LevelSelectActivity.EXTRA_DIFFICULTY, difficulty.id);
-        startActivity(intent);
+        ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                this, android.R.anim.fade_in, android.R.anim.fade_out);
+        startActivity(intent, options.toBundle());
     }
 
     private void showHowToPlay() {

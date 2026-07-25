@@ -9,7 +9,12 @@ import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.os.Build;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.os.VibratorManager;
 import android.util.AttributeSet;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -22,6 +27,7 @@ import com.example.shad.projetosnomade.game.Difficulty;
 import com.example.shad.projetosnomade.game.GameEngine;
 import com.example.shad.projetosnomade.game.Level;
 import com.example.shad.projetosnomade.game.LevelRepository;
+import com.example.shad.projetosnomade.progress.ProgressStore;
 
 /**
  * Created by shad on 18/12/15.
@@ -39,6 +45,10 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
     private static final int CST_ROUGE = 1;
     private static final long FRAME_BUDGET_NANOS = 1_000_000_000L / 60;
     private static final int SNAP_DURATION_MS = 180;
+    private static final int HINT_BLINK_DURATION_MS = 900;
+    private static final long VICTORY_STAGGER_MS = 25;
+    private static final long VICTORY_POP_DURATION_MS = 220;
+    private static final long VICTORY_FLASH_DURATION_MS = 150;
 
     private static final int AXIS_NONE = 0;
     private static final int AXIS_ROW = 1;
@@ -57,7 +67,21 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         }
     }
 
+    /** Immutable snapshot of the in-progress hint blink, read by the render thread without a lock. */
+    private static final class HintVisual {
+        final int axis;
+        final int index;
+        final float alpha;
+
+        HintVisual(int axis, int index, float alpha) {
+            this.axis = axis;
+            this.index = index;
+            this.alpha = alpha;
+        }
+    }
+
     private static final DragVisual NO_DRAG = new DragVisual(AXIS_NONE, -1, 0f);
+    private static final HintVisual NO_HINT = new HintVisual(AXIS_NONE, -1, 0f);
 
     private final Object engineLock = new Object();
     private final int blueStart;
@@ -66,9 +90,13 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
     private final int redEnd;
     private final Paint tilePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint hintPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint flashPaint = new Paint();
     private final RectF tileRect = new RectF();
     private final RectF shadowRect = new RectF();
     private final int touchSlop;
+    private final Vibrator vibrator;
+    private final boolean hapticsEnabled;
 
     private GameEngine engine;
     private int tileSize;
@@ -84,10 +112,14 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
     private boolean touchActive;
     private int pendingRow;
     private int pendingColumn;
+    private int lastHapticStep;
     private float downX;
     private float downY;
     private volatile DragVisual dragVisual = NO_DRAG;
+    private volatile HintVisual hintVisual = NO_HINT;
+    private volatile long victoryAnimStartNanos;
     private ValueAnimator releaseAnimator;
+    private ValueAnimator hintAnimator;
 
     private volatile boolean running;
     private Thread renderThread;
@@ -104,7 +136,10 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         redStart = ContextCompat.getColor(context, R.color.iw_tile_red_start);
         redEnd = ContextCompat.getColor(context, R.color.iw_tile_red_end);
         shadowPaint.setColor(0x33000000);
+        hintPaint.setStyle(Paint.Style.STROKE);
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
+        vibrator = createVibrator(context);
+        hapticsEnabled = new ProgressStore(context).isHapticsEnabled();
 
         setFocusable(true);
         setDifficulty(DIFFICULTY_MEDIUM);
@@ -128,6 +163,7 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         synchronized (engineLock) {
             engine = new GameEngine(level);
         }
+        victoryAnimStartNanos = 0;
         calculateAnchors();
         notifyGameState();
     }
@@ -136,6 +172,7 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         synchronized (engineLock) {
             engine.reset();
         }
+        victoryAnimStartNanos = 0;
         notifyGameState();
     }
 
@@ -150,6 +187,7 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         synchronized (engineLock) {
             engine = GameEngine.restore(level, grid, moves, score, elapsedMillis, won);
         }
+        victoryAnimStartNanos = 0;
         calculateAnchors();
         notifyGameState();
     }
@@ -207,6 +245,37 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         notifyGameState();
     }
 
+    /** Blinks the row/column the engine judges closest to correct. Returns false if already solved. */
+    public boolean requestHint() {
+        GameEngine.HintTarget target;
+        synchronized (engineLock) {
+            target = engine.findHint();
+        }
+        if (target == null) {
+            return false;
+        }
+        int axis = target.axis == GameEngine.Axis.ROW ? AXIS_ROW : AXIS_COLUMN;
+        startHintBlink(axis, target.index);
+        return true;
+    }
+
+    private void startHintBlink(int axis, int index) {
+        if (hintAnimator != null) {
+            hintAnimator.cancel();
+        }
+        ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f, 0f, 1f, 0f);
+        animator.setDuration(HINT_BLINK_DURATION_MS);
+        animator.addUpdateListener(a -> hintVisual = new HintVisual(axis, index, (float) a.getAnimatedValue()));
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                hintVisual = NO_HINT;
+            }
+        });
+        hintAnimator = animator;
+        animator.start();
+    }
+
     private void calculateAnchors() {
         int gridSize = engine.getGridSize();
         int width = Math.max(getWidth(), 1);
@@ -236,23 +305,81 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
             grid = engine.copyGrid();
             gridSize = engine.getGridSize();
         }
-        DragVisual visual = dragVisual;
+        DragVisual drag = dragVisual;
+        long animStart = victoryAnimStartNanos;
+        long victoryElapsedMs = animStart == 0 ? -1 : (System.nanoTime() - animStart) / 1_000_000L;
 
         for (int row = 0; row < gridSize; row++) {
             for (int column = 0; column < gridSize; column++) {
                 int baseLeft = carteLeftAnchor + column * tileSize;
                 int baseTop = carteTopAnchor + row * tileSize;
-                boolean dragged = (visual.axis == AXIS_ROW && row == visual.index)
-                        || (visual.axis == AXIS_COLUMN && column == visual.index);
-                if (!dragged) {
-                    drawTile(canvas, grid[row][column], baseLeft, baseTop);
-                } else if (visual.axis == AXIS_ROW) {
-                    drawWrappedTile(canvas, grid[row][column], baseLeft, baseTop, visual.offsetPx, true, gridSize);
+                boolean dragged = (drag.axis == AXIS_ROW && row == drag.index)
+                        || (drag.axis == AXIS_COLUMN && column == drag.index);
+                if (dragged) {
+                    drawWrappedTile(canvas, grid[row][column], baseLeft, baseTop, drag.offsetPx,
+                            drag.axis == AXIS_ROW, gridSize);
                 } else {
-                    drawWrappedTile(canvas, grid[row][column], baseLeft, baseTop, visual.offsetPx, false, gridSize);
+                    float scale = victoryPopScale(victoryElapsedMs, row, column);
+                    drawTile(canvas, grid[row][column], baseLeft, baseTop, scale);
                 }
             }
         }
+
+        paintHintOverlay(canvas, gridSize);
+        paintVictoryFlash(canvas, victoryElapsedMs, gridSize);
+    }
+
+    private float victoryPopScale(long victoryElapsedMs, int row, int column) {
+        if (victoryElapsedMs < 0) {
+            return 1f;
+        }
+        long tileDelay = (row + column) * VICTORY_STAGGER_MS;
+        long localT = victoryElapsedMs - tileDelay;
+        if (localT < 0 || localT > VICTORY_POP_DURATION_MS) {
+            return 1f;
+        }
+        double phase = Math.PI * localT / (double) VICTORY_POP_DURATION_MS;
+        return 1f + 0.12f * (float) Math.sin(phase);
+    }
+
+    private void paintHintOverlay(Canvas canvas, int gridSize) {
+        HintVisual hint = hintVisual;
+        if (hint.axis == AXIS_NONE || hint.alpha <= 0f) {
+            return;
+        }
+        hintPaint.setStrokeWidth(tileSize * 0.06f);
+        hintPaint.setColor(withAlpha(0xFFFFFFFF, hint.alpha));
+        for (int i = 0; i < gridSize; i++) {
+            int row = hint.axis == AXIS_ROW ? hint.index : i;
+            int column = hint.axis == AXIS_ROW ? i : hint.index;
+            canvas.save();
+            canvas.translate(carteLeftAnchor + column * tileSize, carteTopAnchor + row * tileSize);
+            canvas.drawRoundRect(tileRect, tileRadius, tileRadius, hintPaint);
+            canvas.restore();
+        }
+    }
+
+    private void paintVictoryFlash(Canvas canvas, long victoryElapsedMs, int gridSize) {
+        if (victoryElapsedMs < 0) {
+            return;
+        }
+        long maxStagger = 2L * (gridSize - 1) * VICTORY_STAGGER_MS;
+        long flashElapsed = victoryElapsedMs - (maxStagger + VICTORY_POP_DURATION_MS);
+        if (flashElapsed < 0 || flashElapsed > VICTORY_FLASH_DURATION_MS) {
+            if (flashElapsed > VICTORY_FLASH_DURATION_MS) {
+                victoryAnimStartNanos = 0;
+            }
+            return;
+        }
+        float flashAlpha = 1f - flashElapsed / (float) VICTORY_FLASH_DURATION_MS;
+        flashPaint.setColor(withAlpha(0xFFFFFFFF, flashAlpha * 0.6f));
+        canvas.drawRect(carteLeftAnchor, carteTopAnchor,
+                carteLeftAnchor + gridSize * tileSize, carteTopAnchor + gridSize * tileSize, flashPaint);
+    }
+
+    private static int withAlpha(int color, float alpha) {
+        int a = Math.round(255 * Math.max(0f, Math.min(1f, alpha)));
+        return (a << 24) | (color & 0x00FFFFFF);
     }
 
     private void drawWrappedTile(Canvas canvas, int value, int baseLeft, int baseTop, float offsetPx,
@@ -260,17 +387,20 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         int span = gridSize * tileSize;
         float wrapped = offsetPx > 0 ? offsetPx - span : offsetPx + span;
         if (horizontal) {
-            drawTile(canvas, value, Math.round(baseLeft + offsetPx), baseTop);
-            drawTile(canvas, value, Math.round(baseLeft + wrapped), baseTop);
+            drawTile(canvas, value, Math.round(baseLeft + offsetPx), baseTop, 1f);
+            drawTile(canvas, value, Math.round(baseLeft + wrapped), baseTop, 1f);
         } else {
-            drawTile(canvas, value, baseLeft, Math.round(baseTop + offsetPx));
-            drawTile(canvas, value, baseLeft, Math.round(baseTop + wrapped));
+            drawTile(canvas, value, baseLeft, Math.round(baseTop + offsetPx), 1f);
+            drawTile(canvas, value, baseLeft, Math.round(baseTop + wrapped), 1f);
         }
     }
 
-    private void drawTile(Canvas canvas, int value, int left, int top) {
+    private void drawTile(Canvas canvas, int value, int left, int top, float scale) {
         canvas.save();
         canvas.translate(left, top);
+        if (scale != 1f) {
+            canvas.scale(scale, scale, tileSize / 2f, tileSize / 2f);
+        }
         canvas.drawRoundRect(shadowRect, tileRadius, tileRadius, shadowPaint);
         tilePaint.setShader(value == CST_ROUGE ? redGradient : blueGradient);
         canvas.drawRoundRect(tileRect, tileRadius, tileRadius, tilePaint);
@@ -375,6 +505,7 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         pendingColumn = Math.floorDiv((int) downX - carteLeftAnchor, tileSize);
         pendingRow = Math.floorDiv((int) downY - carteTopAnchor, tileSize);
         touchActive = isInsideGrid(pendingColumn, pendingRow, engine.getGridSize());
+        lastHapticStep = 0;
         dragVisual = NO_DRAG;
     }
 
@@ -400,6 +531,14 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         float maxOffset = engine.getGridSize() * (float) tileSize;
         float clamped = Math.max(-maxOffset, Math.min(maxOffset, rawOffset));
         dragVisual = new DragVisual(visual.axis, visual.index, clamped);
+
+        int step = Math.round(clamped / tileSize);
+        if (step != lastHapticStep) {
+            lastHapticStep = step;
+            if (hapticsEnabled) {
+                performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+            }
+        }
     }
 
     private void onTouchEnd(boolean commit) {
@@ -420,12 +559,19 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
             @Override
             public void onAnimationEnd(Animator animation) {
                 if (steps != 0) {
+                    boolean justWon;
                     synchronized (engineLock) {
+                        boolean wasWon = engine.isWon();
                         if (visual.axis == AXIS_ROW) {
                             engine.rotateRow(visual.index, steps);
                         } else {
                             engine.rotateColumn(visual.index, steps);
                         }
+                        justWon = !wasWon && engine.isWon();
+                    }
+                    vibrate(justWon ? new long[]{0, 60, 80, 60} : new long[]{0, 20});
+                    if (justWon) {
+                        victoryAnimStartNanos = System.nanoTime();
                     }
                     notifyGameState();
                 }
@@ -434,6 +580,27 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         });
         releaseAnimator = animator;
         animator.start();
+    }
+
+    @SuppressWarnings("deprecation")
+    private static Vibrator createVibrator(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            VibratorManager manager = (VibratorManager) context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+            return manager.getDefaultVibrator();
+        }
+        return (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void vibrate(long[] pattern) {
+        if (!hapticsEnabled || vibrator == null || !vibrator.hasVibrator()) {
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+        } else {
+            vibrator.vibrate(pattern, -1);
+        }
     }
 
     public int getElapsedSeconds() {
@@ -446,6 +613,14 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
             gameStateListener.onGameStateChanged(difficultyLabel, engine.getScore(), engine.getMoves(),
                     engine.getElapsedSeconds(), engine.isWon());
         }
+        updateAccessibilityDescription();
+    }
+
+    private void updateAccessibilityDescription() {
+        int gridSize = engine.getGridSize();
+        int correct = engine.countCorrectCells();
+        setContentDescription(getContext().getString(R.string.content_description_grid_format,
+                gridSize, gridSize, correct, gridSize * gridSize));
     }
 
     private boolean isInsideGrid(int column, int row, int gridSize) {

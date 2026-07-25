@@ -90,4 +90,13 @@ public class ProgressStoreTest {
         assertEquals(0, progressStore.getStars("easy_1"));
         assertFalse(progressStore.isUnlocked("easy_2"));
     }
+
+    @Test
+    public void hapticsAreEnabledByDefaultAndRespectExplicitSetting() {
+        assertTrue(progressStore.isHapticsEnabled());
+
+        progressStore.setHapticsEnabled(false);
+
+        assertFalse(progressStore.isHapticsEnabled());
+    }
 }

@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityOptionsCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -35,7 +36,9 @@ public class LevelSelectActivity extends AppCompatActivity {
                 level -> {
                     Intent intent = new Intent(this, IntelligenceWorkout_Activity.class);
                     intent.putExtra(IntelligenceWorkout_Activity.EXTRA_LEVEL_ID, level.id);
-                    startActivity(intent);
+                    ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                            this, android.R.anim.fade_in, android.R.anim.fade_out);
+                    startActivity(intent, options.toBundle());
                 }));
     }
 

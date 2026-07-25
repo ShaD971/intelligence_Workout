@@ -95,6 +95,14 @@ public final class ProgressStore {
         store.clear();
     }
 
+    public boolean isHapticsEnabled() {
+        return store.getInt("hapticsEnabled", 1) != 0;
+    }
+
+    public void setHapticsEnabled(boolean enabled) {
+        store.putInt("hapticsEnabled", enabled ? 1 : 0);
+    }
+
     private static String key(String levelId, String field) {
         return levelId + "." + field;
     }
