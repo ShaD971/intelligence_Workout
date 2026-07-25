@@ -79,14 +79,13 @@ recrée le même risque d'oubli dès qu'un nouveau préfixe apparaît.
 
 ## État au 25/07/2026
 
-- `master` = `270972a` (merge PR #2). Branches restantes : `master`, `chore/repo-cleanup`.
-- `chore/repo-cleanup` (`609f05a`) poussée, **PR pas encore ouverte** vers `master`.
+- `master` = `8a37824` (merge PR #3, `chore/repo-cleanup`). Seule branche restante : `master`.
+- PR #2 (refonte, phases 1 → 6) et PR #3 (nettoyage dépôt + filtre CI) fusionnées et supprimées.
 - Refonte phases 1 → 6 terminée et fusionnée (moteur extrait, 9 niveaux, progression,
   Material 3, drag qui suit le doigt, tests, docs).
 
 ## Reste à faire
 
-- [ ] Ouvrir la PR `chore/repo-cleanup` → `master`, vérifier le check, merger.
 - [ ] Retirer `continue-on-error` du lint une fois la dette résorbée.
 - [ ] Job d'instrumentation UI (`reactivecircus/android-emulator-runner`).
 - [ ] `dependabot.yml` pour les actions et les dépendances Gradle.
