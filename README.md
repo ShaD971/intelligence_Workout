@@ -1,5 +1,7 @@
 # Intelligence WorkOut
 
+[![Android CI](https://github.com/ShaD971/intelligence_Workout/actions/workflows/android.yml/badge.svg)](https://github.com/ShaD971/intelligence_Workout/actions/workflows/android.yml)
+
 Intelligence WorkOut est un jeu Android developpe en Java (Canvas/SurfaceView, sans Compose). Le joueur fait tourner une ligne ou une colonne a la fois pour reproduire une grille cible.
 
 ## Fonctionnalites
