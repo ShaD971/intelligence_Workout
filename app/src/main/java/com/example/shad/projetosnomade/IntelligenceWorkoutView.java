@@ -486,6 +486,7 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
                 onTouchMove(event);
                 return true;
             case MotionEvent.ACTION_UP:
+                performClick();
                 onTouchEnd(true);
                 return true;
             case MotionEvent.ACTION_CANCEL:
@@ -494,6 +495,12 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
             default:
                 return true;
         }
+    }
+
+    @Override
+    public boolean performClick() {
+        super.performClick();
+        return true;
     }
 
     private void onTouchDown(MotionEvent event) {

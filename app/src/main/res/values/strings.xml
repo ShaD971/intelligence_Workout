@@ -4,7 +4,6 @@
     <!-- Home screen -->
     <string name="content_description_logo">Logo Intelligence WorkOut</string>
     <string name="app_description">Deplacez une ligne ou une colonne pour reproduire la forme cible.</string>
-    <string name="choose_level_label">Choisissez un niveau</string>
     <string name="difficulty_easy">Facile</string>
     <string name="difficulty_medium">Moyen</string>
     <string name="difficulty_hard">Difficile</string>
@@ -25,6 +24,7 @@
 
     <!-- Level select screen -->
     <string name="level_select_title_format">Niveaux %1$s</string>
+    <string name="level_card_title_format">%1$d. %2$s</string>
     <string name="content_description_level_preview">Aperçu de la grille cible</string>
     <string name="best_score_format">Meilleur score : %1$d</string>
 

@@ -46,7 +46,8 @@ final class LevelAdapter extends RecyclerView.Adapter<LevelAdapter.ViewHolder> {
         int stars = progressStore.getStars(level.id);
         int bestScore = progressStore.getBestScore(level.id);
 
-        holder.levelName.setText((position + 1) + ". " + holder.itemView.getContext().getString(level.labelRes));
+        holder.levelName.setText(holder.itemView.getContext().getString(R.string.level_card_title_format,
+                position + 1, holder.itemView.getContext().getString(level.labelRes)));
         holder.levelPreview.setTarget(level.target);
         holder.levelStars.setStars(stars);
         if (bestScore > 0) {
