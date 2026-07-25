@@ -73,6 +73,15 @@ public final class GameEngine {
         return grid;
     }
 
+    /** Defensive copy for callers that read the grid from a different thread than the one mutating it. */
+    public int[][] copyGrid() {
+        int[][] copy = new int[grid.length][];
+        for (int row = 0; row < grid.length; row++) {
+            copy[row] = grid[row].clone();
+        }
+        return copy;
+    }
+
     public int[][] getTarget() {
         return level.target;
     }
