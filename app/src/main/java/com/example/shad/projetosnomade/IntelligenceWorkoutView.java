@@ -5,8 +5,6 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -35,17 +33,11 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
 
     private Bitmap bleu;
     private Bitmap rouge;
-    private Bitmap minibleu;
-    private Bitmap minirouge;
-    private Bitmap win;
 
     private GameEngine engine;
     private int tileSize;
-    private int miniTileSize;
     private int carteTopAnchor;
     private int carteLeftAnchor;
-    private int miniTopAnchor;
-    private int miniLeftAnchor;
     private int xchange;
     private int ychange;
     private int xtemp;
@@ -55,7 +47,6 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
     private boolean in = true;
     private Thread cvThread;
     private SurfaceHolder holder;
-    private Paint paint;
 
     public IntelligenceWorkoutView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -66,14 +57,6 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         Resources res = context.getResources();
         bleu = BitmapFactory.decodeResource(res, R.mipmap.blue);
         rouge = BitmapFactory.decodeResource(res, R.mipmap.red);
-        minibleu = BitmapFactory.decodeResource(res, R.mipmap.miniblue);
-        minirouge = BitmapFactory.decodeResource(res, R.mipmap.minired);
-        win = BitmapFactory.decodeResource(res, R.mipmap.win);
-
-        paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.WHITE);
-        paint.setTextAlign(Paint.Align.LEFT);
 
         cvThread = new Thread(this);
         setFocusable(true);
@@ -140,6 +123,10 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         return engine.getLevel().id;
     }
 
+    public int[][] getTarget() {
+        return engine.getTarget();
+    }
+
     public int getMoves() {
         return engine.getMoves();
     }
@@ -160,18 +147,24 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         return engine.computeStars();
     }
 
+    public boolean canUndo() {
+        return engine.canUndo();
+    }
+
+    public void undo() {
+        engine.undo();
+        notifyGameState();
+    }
+
     private void calculateAnchors() {
         int gridSize = engine.getGridSize();
         int width = Math.max(getWidth(), 1);
         int height = Math.max(getHeight(), 1);
         int availableWidth = Math.max(width - 40, 1);
-        int availableHeight = Math.max(height - 220, 1);
+        int availableHeight = Math.max(height - 40, 1);
         tileSize = Math.max(44, Math.min(availableWidth / gridSize, availableHeight / gridSize));
-        miniTileSize = Math.max(22, Math.min(44, tileSize / 3));
         carteLeftAnchor = (width - gridSize * tileSize) / 2;
-        carteTopAnchor = Math.max(170, height - gridSize * tileSize - 30);
-        miniLeftAnchor = (width - gridSize * miniTileSize) / 2;
-        miniTopAnchor = 48;
+        carteTopAnchor = (height - gridSize * tileSize) / 2;
     }
 
     private void paintCarte(Canvas canvas) {
@@ -180,45 +173,14 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         for (int row = 0; row < gridSize; row++) {
             for (int column = 0; column < gridSize; column++) {
                 drawTile(canvas, grid[row][column], carteLeftAnchor + column * tileSize,
-                        carteTopAnchor + row * tileSize, tileSize, false);
+                        carteTopAnchor + row * tileSize, tileSize);
             }
         }
     }
 
-    private void paintMiniCarte(Canvas canvas) {
-        int[][] target = engine.getTarget();
-        int gridSize = engine.getGridSize();
-        paint.setColor(Color.WHITE);
-        paint.setTextSize(24);
-        canvas.drawText("Cible", miniLeftAnchor, Math.max(28, miniTopAnchor - 14), paint);
-        for (int row = 0; row < gridSize; row++) {
-            for (int column = 0; column < gridSize; column++) {
-                drawTile(canvas, target[row][column], miniLeftAnchor + column * miniTileSize,
-                        miniTopAnchor + row * miniTileSize, miniTileSize, true);
-            }
-        }
-    }
-
-    private void drawTile(Canvas canvas, int value, int left, int top, int size, boolean mini) {
-        Bitmap bitmap;
-        if (value == CST_ROUGE) {
-            bitmap = mini ? minirouge : rouge;
-        } else {
-            bitmap = mini ? minibleu : bleu;
-        }
+    private void drawTile(Canvas canvas, int value, int left, int top, int size) {
+        Bitmap bitmap = value == CST_ROUGE ? rouge : bleu;
         canvas.drawBitmap(bitmap, null, new Rect(left, top, left + size, top + size), null);
-    }
-
-    private void paintWin(Canvas canvas) {
-        int width = Math.max(getWidth(), 1);
-        int imageWidth = Math.min(width - 80, 520);
-        int imageHeight = Math.max(120, imageWidth / 2);
-        int left = (width - imageWidth) / 2;
-        canvas.drawBitmap(win, null, new Rect(left, 150, left + imageWidth, 150 + imageHeight), null);
-
-        paint.setColor(Color.WHITE);
-        paint.setTextSize(34);
-        canvas.drawText("Score final : " + engine.getScore(), left, 150 + imageHeight + 44, paint);
     }
 
     @Override
@@ -263,11 +225,7 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
 
     private void nDraw(Canvas canvas) {
         canvas.drawRGB(32, 38, 44);
-        paintMiniCarte(canvas);
         paintCarte(canvas);
-        if (engine.isWon()) {
-            paintWin(canvas);
-        }
     }
 
     @Override

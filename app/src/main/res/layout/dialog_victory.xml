@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/victory_title"
+        android:textColor="@color/iw_on_surface"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <com.example.shad.projetosnomade.view.StarRowView
+        android:id="@+id/victoryStars"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:scaleX="2.2"
+        android:scaleY="2.2" />
+
+    <TextView
+        android:id="@+id/victoryLevelName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:textColor="@color/iw_on_surface"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        tools:text="Croix" />
+
+    <TextView
+        android:id="@+id/victoryTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textColor="@color/iw_on_surface_muted"
+        android:textSize="14sp"
+        tools:text="Temps : 12s" />
+
+    <TextView
+        android:id="@+id/victoryMoves"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/iw_on_surface_muted"
+        android:textSize="14sp"
+        tools:text="Coups : 5" />
+
+    <TextView
+        android:id="@+id/victoryScore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/iw_on_surface_muted"
+        android:textSize="14sp"
+        tools:text="Score : 180" />
+
+    <TextView
+        android:id="@+id/victoryNewRecord"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/victory_new_record"
+        android:textColor="@color/iw_gold"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/nextLevelButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/action_next_level" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/replayButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/action_replay" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/menuButton"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/action_back_to_home" />
+
+</LinearLayout>

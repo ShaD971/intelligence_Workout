@@ -19,6 +19,9 @@
     <string name="how_to_play_title">Comment jouer ?</string>
     <string name="how_to_play_body">Faites glisser une ligne ou une colonne pour la faire tourner et reproduire la grille cible affichée en haut.\n\nChaque coup coûte quelques points, mais finir vite en rapporte beaucoup plus. Reproduisez la cible pour gagner jusqu\'à 3 étoiles selon le nombre de coups utilisés.</string>
     <string name="content_description_lock">Niveau verrouillé</string>
+    <string name="content_description_undo">Annuler le dernier coup</string>
+    <string name="content_description_reset">Réinitialiser la grille</string>
+    <string name="content_description_home">Retour à l\'accueil</string>
 
     <!-- Level select screen -->
     <string name="level_select_title_format">Niveaux %1$s</string>
@@ -26,11 +29,12 @@
     <string name="best_score_format">Meilleur score : %1$d</string>
 
     <!-- Game screen -->
-    <string name="action_reset">Réinitialiser</string>
-    <string name="action_home">Accueil</string>
+    <string name="hud_label_moves">Coups</string>
+    <string name="hud_label_time">Temps</string>
+    <string name="hud_label_score">Score</string>
+    <string name="hud_label_target">Cible</string>
     <string name="game_level_format">Niveau : %1$s</string>
-    <string name="game_score_format">Score : %1$d</string>
-    <string name="game_time_format">Temps : %1$ds</string>
+    <string name="game_time_value_format">%1$ds</string>
     <string name="game_status_playing">Mouvements : %1$d - reproduisez la cible</string>
     <string name="game_status_won">Reussi en %1$d mouvements. Score final : %2$d</string>
 
@@ -45,9 +49,13 @@
     <string name="level_name_hard_2">Spirale</string>
     <string name="level_name_hard_3">Zébré</string>
 
-    <!-- Victory dialog -->
+    <!-- Victory sheet -->
     <string name="victory_title">Bravo !</string>
-    <string name="victory_message">Bravo, vous avez reussi le niveau !\n\nNiveau : %1$s\nTemps : %2$ds\nMouvements : %3$d\nScore final : %4$d</string>
+    <string name="victory_time_format">Temps : %1$ds</string>
+    <string name="victory_moves_format">Coups : %1$d</string>
+    <string name="victory_score_format">Score : %1$d</string>
+    <string name="victory_new_record">Nouveau record !</string>
+    <string name="action_next_level">Niveau suivant</string>
     <string name="action_replay">Rejouer</string>
     <string name="action_back_to_home">Retour accueil</string>
 </resources>

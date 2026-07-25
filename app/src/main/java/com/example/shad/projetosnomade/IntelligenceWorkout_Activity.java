@@ -1,15 +1,23 @@
 package com.example.shad.projetosnomade;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.shad.projetosnomade.databinding.MainBinding;
+import com.example.shad.projetosnomade.game.Level;
+import com.example.shad.projetosnomade.game.LevelRepository;
 import com.example.shad.projetosnomade.progress.ProgressStore;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.example.shad.projetosnomade.view.StarRowView;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.button.MaterialButton;
+
+import java.util.List;
 
 /**
  * Created by shad on 18/12/15.
@@ -33,7 +41,7 @@ public class IntelligenceWorkout_Activity extends AppCompatActivity
     private final Runnable timerTick = new Runnable() {
         @Override
         public void run() {
-            binding.gameTime.setText(getString(R.string.game_time_format, binding.view.getElapsedSeconds()));
+            binding.gameTimeValue.setText(getString(R.string.game_time_value_format, binding.view.getElapsedSeconds()));
             timerHandler.postDelayed(this, 1000);
         }
     };
@@ -61,12 +69,13 @@ public class IntelligenceWorkout_Activity extends AppCompatActivity
             binding.view.setLevel(getIntent().getStringExtra(EXTRA_LEVEL_ID));
         }
         binding.view.setVisibility(View.VISIBLE);
+        binding.targetPreview.setTarget(binding.view.getTarget());
 
+        binding.undoButton.setOnClickListener(v -> binding.view.undo());
         binding.resetButton.setOnClickListener(v -> {
             victoryDialogShown = false;
             binding.view.resetGame();
         });
-
         binding.homeButton.setOnClickListener(v -> finish());
 
         timerHandler.post(timerTick);
@@ -86,38 +95,84 @@ public class IntelligenceWorkout_Activity extends AppCompatActivity
     @Override
     public void onGameStateChanged(String difficultyLabel, int score, int moves, int elapsedSeconds, boolean gameWon) {
         binding.gameDifficulty.setText(getString(R.string.game_level_format, difficultyLabel));
-        binding.gameScore.setText(getString(R.string.game_score_format, score));
-        binding.gameTime.setText(getString(R.string.game_time_format, elapsedSeconds));
+        binding.gameMovesValue.setText(String.valueOf(moves));
+        binding.gameScoreValue.setText(String.valueOf(score));
+        binding.gameTimeValue.setText(getString(R.string.game_time_value_format, elapsedSeconds));
+        binding.undoButton.setEnabled(binding.view.canUndo());
         if (gameWon) {
             binding.gameStatus.setText(getString(R.string.game_status_won, moves, score));
-            showVictoryDialog(difficultyLabel, score, moves, elapsedSeconds);
+            showVictoryDialog(score, moves, elapsedSeconds);
         } else {
             victoryDialogShown = false;
             binding.gameStatus.setText(getString(R.string.game_status_playing, moves));
         }
     }
 
-    private void showVictoryDialog(String difficultyLabel, int score, int moves, int elapsedSeconds) {
+    private void showVictoryDialog(int score, int moves, int elapsedSeconds) {
         if (victoryDialogShown || isFinishing()) {
             return;
         }
         victoryDialogShown = true;
 
-        progressStore.recordResult(binding.view.getLevelId(), binding.view.getStars(), score,
-                binding.view.getElapsedMillis(), moves);
+        String levelId = binding.view.getLevelId();
+        Level level = LevelRepository.byId(levelId);
+        int stars = binding.view.getStars();
+        boolean isNewRecord = score > progressStore.getBestScore(levelId);
 
-        String message = getString(R.string.victory_message, difficultyLabel, elapsedSeconds, moves, score);
+        progressStore.recordResult(levelId, stars, score, binding.view.getElapsedMillis(), moves);
 
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.victory_title)
-                .setMessage(message)
-                .setPositiveButton(R.string.action_replay, (dialog, which) -> {
-                    victoryDialogShown = false;
-                    binding.view.resetGame();
-                })
-                .setNegativeButton(R.string.action_back_to_home, (dialog, which) -> finish())
-                .setCancelable(false)
-                .show();
+        List<Level> tier = LevelRepository.forDifficulty(level.difficulty);
+        int index = tier.indexOf(level);
+        Level nextLevel = index >= 0 && index < tier.size() - 1 ? tier.get(index + 1) : null;
+
+        View sheetView = getLayoutInflater().inflate(R.layout.dialog_victory, null);
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        dialog.setContentView(sheetView);
+        dialog.setCancelable(false);
+
+        StarRowView starsView = sheetView.findViewById(R.id.victoryStars);
+        TextView levelNameView = sheetView.findViewById(R.id.victoryLevelName);
+        TextView timeView = sheetView.findViewById(R.id.victoryTime);
+        TextView movesView = sheetView.findViewById(R.id.victoryMoves);
+        TextView scoreView = sheetView.findViewById(R.id.victoryScore);
+        TextView newRecordView = sheetView.findViewById(R.id.victoryNewRecord);
+        MaterialButton nextLevelButton = sheetView.findViewById(R.id.nextLevelButton);
+        MaterialButton replayButton = sheetView.findViewById(R.id.replayButton);
+        MaterialButton menuButton = sheetView.findViewById(R.id.menuButton);
+
+        starsView.setStars(stars);
+        levelNameView.setText(getString(level.labelRes));
+        timeView.setText(getString(R.string.victory_time_format, elapsedSeconds));
+        movesView.setText(getString(R.string.victory_moves_format, moves));
+        scoreView.setText(getString(R.string.victory_score_format, score));
+        newRecordView.setVisibility(isNewRecord ? View.VISIBLE : View.GONE);
+
+        if (nextLevel != null) {
+            Level target = nextLevel;
+            nextLevelButton.setVisibility(View.VISIBLE);
+            nextLevelButton.setOnClickListener(v -> {
+                dialog.dismiss();
+                Intent intent = new Intent(this, IntelligenceWorkout_Activity.class);
+                intent.putExtra(EXTRA_LEVEL_ID, target.id);
+                startActivity(intent);
+                finish();
+            });
+        } else {
+            nextLevelButton.setVisibility(View.GONE);
+        }
+
+        replayButton.setOnClickListener(v -> {
+            dialog.dismiss();
+            victoryDialogShown = false;
+            binding.view.resetGame();
+        });
+
+        menuButton.setOnClickListener(v -> {
+            dialog.dismiss();
+            finish();
+        });
+
+        dialog.show();
     }
 
     @Override
