@@ -19,6 +19,17 @@
     <string name="game_status_playing">Mouvements : %1$d - reproduisez la cible</string>
     <string name="game_status_won">Reussi en %1$d mouvements. Score final : %2$d</string>
 
+    <!-- Level names -->
+    <string name="level_name_easy_1">Croix</string>
+    <string name="level_name_easy_2">Diagonale</string>
+    <string name="level_name_easy_3">Damier</string>
+    <string name="level_name_medium_1">Cadre</string>
+    <string name="level_name_medium_2">Sablier</string>
+    <string name="level_name_medium_3">Viseur</string>
+    <string name="level_name_hard_1">Nœud papillon</string>
+    <string name="level_name_hard_2">Spirale</string>
+    <string name="level_name_hard_3">Zébré</string>
+
     <!-- Victory dialog -->
     <string name="victory_title">Bravo !</string>
     <string name="victory_message">Bravo, vous avez reussi le niveau !\n\nNiveau : %1$s\nTemps : %2$ds\nMouvements : %3$d\nScore final : %4$d</string>

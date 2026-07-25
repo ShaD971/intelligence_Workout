@@ -9,10 +9,14 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import com.example.shad.projetosnomade.game.Difficulty;
+import com.example.shad.projetosnomade.game.GameEngine;
+import com.example.shad.projetosnomade.game.Level;
+import com.example.shad.projetosnomade.game.LevelRepository;
 
 /**
  * Created by shad on 18/12/15.
@@ -23,11 +27,10 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         void onGameStateChanged(String difficultyLabel, int score, int moves, int elapsedSeconds, boolean gameWon);
     }
 
-    public static final String DIFFICULTY_EASY = "easy";
-    public static final String DIFFICULTY_MEDIUM = "medium";
-    public static final String DIFFICULTY_HARD = "hard";
+    public static final String DIFFICULTY_EASY = Difficulty.EASY.id;
+    public static final String DIFFICULTY_MEDIUM = Difficulty.MEDIUM.id;
+    public static final String DIFFICULTY_HARD = Difficulty.HARD.id;
 
-    private static final int CST_BLEU = 0;
     private static final int CST_ROUGE = 1;
 
     private Bitmap bleu;
@@ -36,10 +39,7 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
     private Bitmap minirouge;
     private Bitmap win;
 
-    private int[][] carte;
-    private int[][] initialCarte;
-    private int[][] minicarte;
-    private int gridSize;
+    private GameEngine engine;
     private int tileSize;
     private int miniTileSize;
     private int carteTopAnchor;
@@ -50,18 +50,6 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
     private int ychange;
     private int xtemp;
     private int ytemp;
-    private int score;
-    private int moves;
-    private int startScore;
-    private int movePenalty;
-    private int parMoves;
-    private int finishBonus;
-    private int quickMoveBonus;
-    private long startTimeMillis;
-    private int finalElapsedSeconds;
-    private boolean gameWon;
-    private String difficulty = DIFFICULTY_MEDIUM;
-    private String difficultyLabel = "Moyen";
     private GameStateListener gameStateListener;
 
     private boolean in = true;
@@ -87,9 +75,9 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         paint.setColor(Color.WHITE);
         paint.setTextAlign(Paint.Align.LEFT);
 
-        initParameters();
         cvThread = new Thread(this);
         setFocusable(true);
+        setDifficulty(DIFFICULTY_MEDIUM);
     }
 
     public void setGameStateListener(GameStateListener listener) {
@@ -98,144 +86,23 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
     }
 
     public void setDifficulty(String selectedDifficulty) {
-        if (DIFFICULTY_EASY.equals(selectedDifficulty)) {
-            difficulty = DIFFICULTY_EASY;
-            difficultyLabel = "Facile";
-            startScore = 120;
-            movePenalty = 4;
-            parMoves = 2;
-            finishBonus = 60;
-            quickMoveBonus = 15;
-        } else if (DIFFICULTY_HARD.equals(selectedDifficulty)) {
-            difficulty = DIFFICULTY_HARD;
-            difficultyLabel = "Difficile";
-            startScore = 360;
-            movePenalty = 12;
-            parMoves = 6;
-            finishBonus = 280;
-            quickMoveBonus = 50;
-        } else {
-            difficulty = DIFFICULTY_MEDIUM;
-            difficultyLabel = "Moyen";
-            startScore = 220;
-            movePenalty = 8;
-            parMoves = 4;
-            finishBonus = 140;
-            quickMoveBonus = 30;
-        }
-        initParameters();
-    }
-
-    public void resetGame() {
-        carte = copyGrid(initialCarte);
-        score = startScore;
-        moves = 0;
-        startTimeMillis = System.currentTimeMillis();
-        finalElapsedSeconds = 0;
-        gameWon = false;
-        notifyGameState();
-    }
-
-    public void initParameters() {
-        configureScoreIfNeeded();
-
-        int[][] target = targetForDifficulty();
-        int[][] start = startForDifficulty();
-        gridSize = target.length;
-        minicarte = copyGrid(target);
-        initialCarte = copyGrid(start);
-        carte = copyGrid(start);
-        score = startScore;
-        moves = 0;
-        startTimeMillis = System.currentTimeMillis();
-        finalElapsedSeconds = 0;
-        gameWon = false;
-
+        Level level = LevelRepository.forDifficulty(Difficulty.fromId(selectedDifficulty)).get(0);
+        engine = new GameEngine(level);
         calculateAnchors();
         notifyGameState();
 
-        if ((cvThread != null) && (!cvThread.isAlive())) {
+        if (cvThread != null && !cvThread.isAlive()) {
             cvThread.start();
-            Log.e("-FCT-", "cv_thread.start()");
         }
     }
 
-    private void configureScoreIfNeeded() {
-        if (startScore > 0) {
-            return;
-        }
-        startScore = 220;
-        movePenalty = 8;
-        parMoves = 4;
-        finishBonus = 140;
-        quickMoveBonus = 30;
-    }
-
-    private int[][] targetForDifficulty() {
-        if (DIFFICULTY_EASY.equals(difficulty)) {
-            return new int[][]{
-                    {CST_BLEU, CST_ROUGE, CST_BLEU},
-                    {CST_ROUGE, CST_ROUGE, CST_ROUGE},
-                    {CST_BLEU, CST_ROUGE, CST_BLEU}
-            };
-        }
-        if (DIFFICULTY_HARD.equals(difficulty)) {
-            return new int[][]{
-                    {CST_ROUGE, CST_BLEU, CST_BLEU, CST_BLEU, CST_BLEU, CST_ROUGE},
-                    {CST_BLEU, CST_ROUGE, CST_BLEU, CST_BLEU, CST_ROUGE, CST_BLEU},
-                    {CST_BLEU, CST_BLEU, CST_ROUGE, CST_ROUGE, CST_BLEU, CST_BLEU},
-                    {CST_BLEU, CST_BLEU, CST_ROUGE, CST_ROUGE, CST_BLEU, CST_BLEU},
-                    {CST_BLEU, CST_ROUGE, CST_BLEU, CST_BLEU, CST_ROUGE, CST_BLEU},
-                    {CST_ROUGE, CST_BLEU, CST_BLEU, CST_BLEU, CST_BLEU, CST_ROUGE}
-            };
-        }
-        return new int[][]{
-                {CST_BLEU, CST_BLEU, CST_ROUGE, CST_BLEU, CST_BLEU},
-                {CST_BLEU, CST_BLEU, CST_ROUGE, CST_BLEU, CST_BLEU},
-                {CST_ROUGE, CST_ROUGE, CST_ROUGE, CST_ROUGE, CST_ROUGE},
-                {CST_BLEU, CST_BLEU, CST_ROUGE, CST_BLEU, CST_BLEU},
-                {CST_BLEU, CST_BLEU, CST_ROUGE, CST_BLEU, CST_BLEU}
-        };
-    }
-
-    private int[][] startForDifficulty() {
-        if (DIFFICULTY_EASY.equals(difficulty)) {
-            return new int[][]{
-                    {CST_BLEU, CST_BLEU, CST_ROUGE},
-                    {CST_ROUGE, CST_ROUGE, CST_ROUGE},
-                    {CST_ROUGE, CST_BLEU, CST_BLEU}
-            };
-        }
-        if (DIFFICULTY_HARD.equals(difficulty)) {
-            return new int[][]{
-                    {CST_BLEU, CST_BLEU, CST_BLEU, CST_BLEU, CST_ROUGE, CST_ROUGE},
-                    {CST_BLEU, CST_ROUGE, CST_BLEU, CST_ROUGE, CST_BLEU, CST_BLEU},
-                    {CST_ROUGE, CST_BLEU, CST_BLEU, CST_BLEU, CST_BLEU, CST_ROUGE},
-                    {CST_BLEU, CST_BLEU, CST_ROUGE, CST_ROUGE, CST_BLEU, CST_BLEU},
-                    {CST_BLEU, CST_BLEU, CST_ROUGE, CST_BLEU, CST_BLEU, CST_ROUGE},
-                    {CST_ROUGE, CST_BLEU, CST_BLEU, CST_ROUGE, CST_BLEU, CST_BLEU}
-            };
-        }
-        return new int[][]{
-                {CST_ROUGE, CST_BLEU, CST_BLEU, CST_BLEU, CST_BLEU},
-                {CST_BLEU, CST_ROUGE, CST_BLEU, CST_BLEU, CST_BLEU},
-                {CST_ROUGE, CST_ROUGE, CST_ROUGE, CST_ROUGE, CST_ROUGE},
-                {CST_BLEU, CST_BLEU, CST_BLEU, CST_BLEU, CST_ROUGE},
-                {CST_BLEU, CST_BLEU, CST_ROUGE, CST_BLEU, CST_BLEU}
-        };
-    }
-
-    private int[][] copyGrid(int[][] source) {
-        int[][] result = new int[source.length][source.length];
-        for (int row = 0; row < source.length; row++) {
-            for (int column = 0; column < source[row].length; column++) {
-                result[row][column] = source[row][column];
-            }
-        }
-        return result;
+    public void resetGame() {
+        engine.reset();
+        notifyGameState();
     }
 
     private void calculateAnchors() {
+        int gridSize = engine.getGridSize();
         int width = Math.max(getWidth(), 1);
         int height = Math.max(getHeight(), 1);
         int availableWidth = Math.max(width - 40, 1);
@@ -249,21 +116,25 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
     }
 
     private void paintCarte(Canvas canvas) {
+        int[][] grid = engine.getGrid();
+        int gridSize = engine.getGridSize();
         for (int row = 0; row < gridSize; row++) {
             for (int column = 0; column < gridSize; column++) {
-                drawTile(canvas, carte[row][column], carteLeftAnchor + column * tileSize,
+                drawTile(canvas, grid[row][column], carteLeftAnchor + column * tileSize,
                         carteTopAnchor + row * tileSize, tileSize, false);
             }
         }
     }
 
     private void paintMiniCarte(Canvas canvas) {
+        int[][] target = engine.getTarget();
+        int gridSize = engine.getGridSize();
         paint.setColor(Color.WHITE);
         paint.setTextSize(24);
         canvas.drawText("Cible", miniLeftAnchor, Math.max(28, miniTopAnchor - 14), paint);
         for (int row = 0; row < gridSize; row++) {
             for (int column = 0; column < gridSize; column++) {
-                drawTile(canvas, minicarte[row][column], miniLeftAnchor + column * miniTileSize,
+                drawTile(canvas, target[row][column], miniLeftAnchor + column * miniTileSize,
                         miniTopAnchor + row * miniTileSize, miniTileSize, true);
             }
         }
@@ -288,31 +159,33 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
 
         paint.setColor(Color.WHITE);
         paint.setTextSize(34);
-        canvas.drawText("Score final : " + score, left, 150 + imageHeight + 44, paint);
+        canvas.drawText("Score final : " + engine.getScore(), left, 150 + imageHeight + 44, paint);
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        Log.i("-> FCT <-", "surfaceCreated");
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        Log.i("-> FCT <-", "surfaceChanged " + width + " - " + height);
         calculateAnchors();
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        Log.i("-> FCT <-", "surfaceDestroyed");
     }
 
     @Override
     public void run() {
+        long lastFrameTime = System.currentTimeMillis();
         Canvas c = null;
         while (in) {
             try {
                 Thread.sleep(40);
+
+                long now = System.currentTimeMillis();
+                engine.tick(now - lastFrameTime);
+                lastFrameTime = now;
 
                 try {
                     c = holder.lockCanvas(null);
@@ -324,42 +197,31 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
                         holder.unlockCanvasAndPost(c);
                     }
                 }
-            } catch (Exception e) {
-                Log.e("-> RUN <-", "PB DANS RUN");
+            } catch (Exception ignored) {
             }
         }
-    }
-
-    private boolean win() {
-        for (int row = 0; row < gridSize; row++) {
-            for (int column = 0; column < gridSize; column++) {
-                if (carte[row][column] != minicarte[row][column]) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     private void nDraw(Canvas canvas) {
         canvas.drawRGB(32, 38, 44);
         paintMiniCarte(canvas);
         paintCarte(canvas);
-        if (gameWon) {
+        if (engine.isWon()) {
             paintWin(canvas);
         }
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (gameWon) {
+        if (engine.isWon()) {
             return true;
         }
 
-        xchange = ((int) event.getX() - carteLeftAnchor) / tileSize;
-        ychange = ((int) event.getY() - carteTopAnchor) / tileSize;
+        int gridSize = engine.getGridSize();
+        xchange = Math.floorDiv((int) event.getX() - carteLeftAnchor, tileSize);
+        ychange = Math.floorDiv((int) event.getY() - carteTopAnchor, tileSize);
 
-        if (!isInsideGrid(xchange, ychange)) {
+        if (!isInsideGrid(xchange, ychange, gridSize)) {
             return true;
         }
 
@@ -370,26 +232,15 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
                 return true;
             case MotionEvent.ACTION_MOVE:
                 if (xtemp != xchange) {
-                    if (xchange - xtemp > 0) {
-                        rotateRowRight(ytemp);
-                    } else {
-                        rotateRowLeft(ytemp);
-                    }
+                    engine.rotateRow(ytemp, xchange - xtemp > 0 ? 1 : -1);
                     xtemp = xchange;
-                    recordMove();
+                    notifyGameState();
                 }
                 if (ytemp != ychange) {
-                    if (ychange - ytemp > 0) {
-                        rotateColumnDown(xtemp);
-                    } else {
-                        rotateColumnUp(xtemp);
-                    }
+                    engine.rotateColumn(xtemp, ychange - ytemp > 0 ? 1 : -1);
                     ytemp = ychange;
-                    recordMove();
+                    notifyGameState();
                 }
-                break;
-            case MotionEvent.ACTION_UP:
-                checkForWin();
                 break;
             default:
                 break;
@@ -398,70 +249,19 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         return true;
     }
 
-    private void recordMove() {
-        moves++;
-        score = Math.max(0, score - movePenalty);
-        checkForWin();
-        notifyGameState();
-    }
-
-    private void checkForWin() {
-        if (!gameWon && win()) {
-            int fastFinishBonus = Math.max(0, (parMoves - moves + 1) * quickMoveBonus);
-            int bonus = finishBonus + fastFinishBonus;
-            score += bonus;
-            finalElapsedSeconds = getElapsedSeconds();
-            gameWon = true;
-            notifyGameState();
-        }
-    }
-
     public int getElapsedSeconds() {
-        if (gameWon) {
-            return finalElapsedSeconds;
-        }
-        return (int) ((System.currentTimeMillis() - startTimeMillis) / 1000);
+        return engine.getElapsedSeconds();
     }
 
     private void notifyGameState() {
         if (gameStateListener != null) {
-            gameStateListener.onGameStateChanged(difficultyLabel, score, moves, getElapsedSeconds(), gameWon);
+            String difficultyLabel = getContext().getString(engine.getLevel().difficulty.labelRes);
+            gameStateListener.onGameStateChanged(difficultyLabel, engine.getScore(), engine.getMoves(),
+                    engine.getElapsedSeconds(), engine.isWon());
         }
     }
 
-    private boolean isInsideGrid(int column, int row) {
+    private boolean isInsideGrid(int column, int row, int gridSize) {
         return column >= 0 && column < gridSize && row >= 0 && row < gridSize;
-    }
-
-    private void rotateRowRight(int row) {
-        int last = carte[row][gridSize - 1];
-        for (int column = gridSize - 1; column > 0; column--) {
-            carte[row][column] = carte[row][column - 1];
-        }
-        carte[row][0] = last;
-    }
-
-    private void rotateRowLeft(int row) {
-        int first = carte[row][0];
-        for (int column = 0; column < gridSize - 1; column++) {
-            carte[row][column] = carte[row][column + 1];
-        }
-        carte[row][gridSize - 1] = first;
-    }
-
-    private void rotateColumnDown(int column) {
-        int last = carte[gridSize - 1][column];
-        for (int row = gridSize - 1; row > 0; row--) {
-            carte[row][column] = carte[row - 1][column];
-        }
-        carte[0][column] = last;
-    }
-
-    private void rotateColumnUp(int column) {
-        int first = carte[0][column];
-        for (int row = 0; row < gridSize - 1; row++) {
-            carte[row][column] = carte[row + 1][column];
-        }
-        carte[gridSize - 1][column] = first;
     }
 }
