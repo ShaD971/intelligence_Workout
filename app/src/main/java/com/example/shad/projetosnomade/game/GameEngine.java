@@ -15,11 +15,13 @@ public final class GameEngine {
         public final Axis axis;
         public final int index;
         public final int direction;
+        public final int stepCount;
 
-        public Move(Axis axis, int index, int direction) {
+        public Move(Axis axis, int index, int direction, int stepCount) {
             this.axis = axis;
             this.index = index;
             this.direction = direction;
+            this.stepCount = stepCount;
         }
     }
 
@@ -116,12 +118,14 @@ public final class GameEngine {
         }
     }
 
-    public void rotateRow(int row, int direction) {
-        applyMove(new Move(Axis.ROW, row, direction));
+    /** Rotates a row by the given number of single-cell steps (sign = direction) as one move. */
+    public void rotateRow(int row, int steps) {
+        applyMove(Axis.ROW, row, steps);
     }
 
-    public void rotateColumn(int column, int direction) {
-        applyMove(new Move(Axis.COLUMN, column, direction));
+    /** Rotates a column by the given number of single-cell steps (sign = direction) as one move. */
+    public void rotateColumn(int column, int steps) {
+        applyMove(Axis.COLUMN, column, steps);
     }
 
     public boolean canUndo() {
@@ -133,7 +137,8 @@ public final class GameEngine {
             return;
         }
         HistoryEntry entry = history.pop();
-        rotate(new Move(entry.move.axis, entry.move.index, -entry.move.direction));
+        Move move = entry.move;
+        rotate(new Move(move.axis, move.index, -move.direction, move.stepCount));
         score = entry.scoreBefore;
         moves = entry.movesBefore;
         won = false;
@@ -161,10 +166,13 @@ public final class GameEngine {
         return 1;
     }
 
-    private void applyMove(Move move) {
-        if (won) {
+    private void applyMove(Axis axis, int index, int steps) {
+        if (won || steps == 0) {
             return;
         }
+        int direction = steps > 0 ? 1 : -1;
+        Move move = new Move(axis, index, direction, Math.abs(steps));
+
         int scoreBefore = score;
         int movesBefore = moves;
         rotate(move);
@@ -196,17 +204,19 @@ public final class GameEngine {
     }
 
     private void rotate(Move move) {
-        if (move.axis == Axis.ROW) {
-            if (move.direction > 0) {
-                GridRotations.rotateRowRight(grid, move.index);
+        for (int i = 0; i < move.stepCount; i++) {
+            if (move.axis == Axis.ROW) {
+                if (move.direction > 0) {
+                    GridRotations.rotateRowRight(grid, move.index);
+                } else {
+                    GridRotations.rotateRowLeft(grid, move.index);
+                }
             } else {
-                GridRotations.rotateRowLeft(grid, move.index);
-            }
-        } else {
-            if (move.direction > 0) {
-                GridRotations.rotateColumnDown(grid, move.index);
-            } else {
-                GridRotations.rotateColumnUp(grid, move.index);
+                if (move.direction > 0) {
+                    GridRotations.rotateColumnDown(grid, move.index);
+                } else {
+                    GridRotations.rotateColumnUp(grid, move.index);
+                }
             }
         }
     }

@@ -85,6 +85,40 @@ public class GameEngineTest {
     }
 
     @Test
+    public void multiStepRotationCountsAsOneMove() {
+        GameEngine engine = new GameEngine(testLevel());
+
+        engine.rotateRow(0, 3);
+
+        assertEquals(1, engine.getMoves());
+    }
+
+    @Test
+    public void multiStepRotationMatchesThreeSingleSteps() {
+        GameEngine reference = new GameEngine(testLevel());
+        reference.rotateRow(0, 1);
+        reference.rotateRow(0, 1);
+        reference.rotateRow(0, 1);
+
+        GameEngine engine = new GameEngine(testLevel());
+        engine.rotateRow(0, 3);
+
+        assertArrayEquals(reference.getGrid(), engine.getGrid());
+    }
+
+    @Test
+    public void undoReversesMultiStepRotationInOneGo() {
+        GameEngine engine = new GameEngine(testLevel());
+        int[][] before = deepCopy(engine.getGrid());
+
+        engine.rotateColumn(1, -2);
+        engine.undo();
+
+        assertArrayEquals(before, engine.getGrid());
+        assertFalse(engine.canUndo());
+    }
+
+    @Test
     public void computeStarsMatchesParMovesThresholds() {
         Level level = new Level("stars", Difficulty.EASY, new int[][]{
                 {0, 1},

@@ -1,5 +1,8 @@
 package com.example.shad.projetosnomade;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -10,6 +13,8 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.ViewConfiguration;
+import android.view.animation.DecelerateInterpolator;
 
 import androidx.core.content.ContextCompat;
 
@@ -33,6 +38,26 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
 
     private static final int CST_ROUGE = 1;
     private static final long FRAME_BUDGET_NANOS = 1_000_000_000L / 60;
+    private static final int SNAP_DURATION_MS = 180;
+
+    private static final int AXIS_NONE = 0;
+    private static final int AXIS_ROW = 1;
+    private static final int AXIS_COLUMN = 2;
+
+    /** Immutable snapshot of the in-progress drag, read by the render thread without a lock. */
+    private static final class DragVisual {
+        final int axis;
+        final int index;
+        final float offsetPx;
+
+        DragVisual(int axis, int index, float offsetPx) {
+            this.axis = axis;
+            this.index = index;
+            this.offsetPx = offsetPx;
+        }
+    }
+
+    private static final DragVisual NO_DRAG = new DragVisual(AXIS_NONE, -1, 0f);
 
     private final Object engineLock = new Object();
     private final int blueStart;
@@ -43,6 +68,7 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
     private final Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF tileRect = new RectF();
     private final RectF shadowRect = new RectF();
+    private final int touchSlop;
 
     private GameEngine engine;
     private int tileSize;
@@ -53,11 +79,15 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
     private LinearGradient redGradient;
     private int carteTopAnchor;
     private int carteLeftAnchor;
-    private int xchange;
-    private int ychange;
-    private int xtemp;
-    private int ytemp;
     private GameStateListener gameStateListener;
+
+    private boolean touchActive;
+    private int pendingRow;
+    private int pendingColumn;
+    private float downX;
+    private float downY;
+    private volatile DragVisual dragVisual = NO_DRAG;
+    private ValueAnimator releaseAnimator;
 
     private volatile boolean running;
     private Thread renderThread;
@@ -74,6 +104,7 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         redStart = ContextCompat.getColor(context, R.color.iw_tile_red_start);
         redEnd = ContextCompat.getColor(context, R.color.iw_tile_red_end);
         shadowPaint.setColor(0x33000000);
+        touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
 
         setFocusable(true);
         setDifficulty(DIFFICULTY_MEDIUM);
@@ -205,11 +236,35 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
             grid = engine.copyGrid();
             gridSize = engine.getGridSize();
         }
+        DragVisual visual = dragVisual;
+
         for (int row = 0; row < gridSize; row++) {
             for (int column = 0; column < gridSize; column++) {
-                drawTile(canvas, grid[row][column], carteLeftAnchor + column * tileSize,
-                        carteTopAnchor + row * tileSize);
+                int baseLeft = carteLeftAnchor + column * tileSize;
+                int baseTop = carteTopAnchor + row * tileSize;
+                boolean dragged = (visual.axis == AXIS_ROW && row == visual.index)
+                        || (visual.axis == AXIS_COLUMN && column == visual.index);
+                if (!dragged) {
+                    drawTile(canvas, grid[row][column], baseLeft, baseTop);
+                } else if (visual.axis == AXIS_ROW) {
+                    drawWrappedTile(canvas, grid[row][column], baseLeft, baseTop, visual.offsetPx, true, gridSize);
+                } else {
+                    drawWrappedTile(canvas, grid[row][column], baseLeft, baseTop, visual.offsetPx, false, gridSize);
+                }
             }
+        }
+    }
+
+    private void drawWrappedTile(Canvas canvas, int value, int baseLeft, int baseTop, float offsetPx,
+                                  boolean horizontal, int gridSize) {
+        int span = gridSize * tileSize;
+        float wrapped = offsetPx > 0 ? offsetPx - span : offsetPx + span;
+        if (horizontal) {
+            drawTile(canvas, value, Math.round(baseLeft + offsetPx), baseTop);
+            drawTile(canvas, value, Math.round(baseLeft + wrapped), baseTop);
+        } else {
+            drawTile(canvas, value, baseLeft, Math.round(baseTop + offsetPx));
+            drawTile(canvas, value, baseLeft, Math.round(baseTop + wrapped));
         }
     }
 
@@ -293,40 +348,92 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
             return true;
         }
 
-        int gridSize = engine.getGridSize();
-        xchange = Math.floorDiv((int) event.getX() - carteLeftAnchor, tileSize);
-        ychange = Math.floorDiv((int) event.getY() - carteTopAnchor, tileSize);
-
-        if (!isInsideGrid(xchange, ychange, gridSize)) {
-            return true;
-        }
-
-        switch (event.getAction() & MotionEvent.ACTION_MASK) {
+        switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                xtemp = xchange;
-                ytemp = ychange;
+                onTouchDown(event);
                 return true;
             case MotionEvent.ACTION_MOVE:
-                if (xtemp != xchange) {
-                    synchronized (engineLock) {
-                        engine.rotateRow(ytemp, xchange - xtemp > 0 ? 1 : -1);
-                    }
-                    xtemp = xchange;
-                    notifyGameState();
-                }
-                if (ytemp != ychange) {
-                    synchronized (engineLock) {
-                        engine.rotateColumn(xtemp, ychange - ytemp > 0 ? 1 : -1);
-                    }
-                    ytemp = ychange;
-                    notifyGameState();
-                }
-                break;
+                onTouchMove(event);
+                return true;
+            case MotionEvent.ACTION_UP:
+                onTouchEnd(true);
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                onTouchEnd(false);
+                return true;
             default:
-                break;
+                return true;
+        }
+    }
+
+    private void onTouchDown(MotionEvent event) {
+        if (releaseAnimator != null) {
+            releaseAnimator.cancel();
+        }
+        downX = event.getX();
+        downY = event.getY();
+        pendingColumn = Math.floorDiv((int) downX - carteLeftAnchor, tileSize);
+        pendingRow = Math.floorDiv((int) downY - carteTopAnchor, tileSize);
+        touchActive = isInsideGrid(pendingColumn, pendingRow, engine.getGridSize());
+        dragVisual = NO_DRAG;
+    }
+
+    private void onTouchMove(MotionEvent event) {
+        if (!touchActive) {
+            return;
+        }
+        float dx = event.getX() - downX;
+        float dy = event.getY() - downY;
+        DragVisual visual = dragVisual;
+
+        if (visual.axis == AXIS_NONE) {
+            if (Math.abs(dx) < touchSlop && Math.abs(dy) < touchSlop) {
+                return;
+            }
+            int axis = Math.abs(dx) >= Math.abs(dy) ? AXIS_ROW : AXIS_COLUMN;
+            int index = axis == AXIS_ROW ? pendingRow : pendingColumn;
+            dragVisual = new DragVisual(axis, index, 0f);
+            return;
         }
 
-        return true;
+        float rawOffset = visual.axis == AXIS_ROW ? dx : dy;
+        float maxOffset = engine.getGridSize() * (float) tileSize;
+        float clamped = Math.max(-maxOffset, Math.min(maxOffset, rawOffset));
+        dragVisual = new DragVisual(visual.axis, visual.index, clamped);
+    }
+
+    private void onTouchEnd(boolean commit) {
+        touchActive = false;
+        DragVisual visual = dragVisual;
+        if (visual.axis == AXIS_NONE) {
+            return;
+        }
+
+        int steps = commit ? Math.round(visual.offsetPx / tileSize) : 0;
+        float target = steps * (float) tileSize;
+
+        ValueAnimator animator = ValueAnimator.ofFloat(visual.offsetPx, target);
+        animator.setDuration(SNAP_DURATION_MS);
+        animator.setInterpolator(new DecelerateInterpolator(1.6f));
+        animator.addUpdateListener(a -> dragVisual = new DragVisual(visual.axis, visual.index, (float) a.getAnimatedValue()));
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                if (steps != 0) {
+                    synchronized (engineLock) {
+                        if (visual.axis == AXIS_ROW) {
+                            engine.rotateRow(visual.index, steps);
+                        } else {
+                            engine.rotateColumn(visual.index, steps);
+                        }
+                    }
+                    notifyGameState();
+                }
+                dragVisual = NO_DRAG;
+            }
+        });
+        releaseAnimator = animator;
+        animator.start();
     }
 
     public int getElapsedSeconds() {
