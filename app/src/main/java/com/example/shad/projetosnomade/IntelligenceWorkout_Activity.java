@@ -8,6 +8,7 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.shad.projetosnomade.databinding.MainBinding;
+import com.example.shad.projetosnomade.progress.ProgressStore;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 /**
@@ -18,7 +19,15 @@ public class IntelligenceWorkout_Activity extends AppCompatActivity
 
     public static final String EXTRA_DIFFICULTY = "com.example.shad.projetosnomade.DIFFICULTY";
 
+    private static final String STATE_LEVEL_ID = "levelId";
+    private static final String STATE_GRID = "grid";
+    private static final String STATE_MOVES = "moves";
+    private static final String STATE_SCORE = "score";
+    private static final String STATE_ELAPSED_MILLIS = "elapsedMillis";
+    private static final String STATE_WON = "won";
+
     private MainBinding binding;
+    private ProgressStore progressStore;
     private boolean victoryDialogShown;
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
     private final Runnable timerTick = new Runnable() {
@@ -33,11 +42,24 @@ public class IntelligenceWorkout_Activity extends AppCompatActivity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        progressStore = new ProgressStore(this);
+
         binding = MainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         binding.view.setGameStateListener(this);
-        binding.view.setDifficulty(getIntent().getStringExtra(EXTRA_DIFFICULTY));
+        if (savedInstanceState != null && savedInstanceState.containsKey(STATE_LEVEL_ID)) {
+            binding.view.restoreState(
+                    savedInstanceState.getString(STATE_LEVEL_ID),
+                    savedInstanceState.getIntArray(STATE_GRID),
+                    savedInstanceState.getInt(STATE_MOVES),
+                    savedInstanceState.getInt(STATE_SCORE),
+                    savedInstanceState.getLong(STATE_ELAPSED_MILLIS),
+                    savedInstanceState.getBoolean(STATE_WON));
+            victoryDialogShown = savedInstanceState.getBoolean(STATE_WON);
+        } else {
+            binding.view.setDifficulty(getIntent().getStringExtra(EXTRA_DIFFICULTY));
+        }
         binding.view.setVisibility(View.VISIBLE);
 
         binding.resetButton.setOnClickListener(v -> {
@@ -48,6 +70,17 @@ public class IntelligenceWorkout_Activity extends AppCompatActivity
         binding.homeButton.setOnClickListener(v -> finish());
 
         timerHandler.post(timerTick);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_LEVEL_ID, binding.view.getLevelId());
+        outState.putIntArray(STATE_GRID, binding.view.captureFlatGrid());
+        outState.putInt(STATE_MOVES, binding.view.getMoves());
+        outState.putInt(STATE_SCORE, binding.view.getScore());
+        outState.putLong(STATE_ELAPSED_MILLIS, binding.view.getElapsedMillis());
+        outState.putBoolean(STATE_WON, binding.view.isGameWon());
     }
 
     @Override
@@ -69,6 +102,9 @@ public class IntelligenceWorkout_Activity extends AppCompatActivity
             return;
         }
         victoryDialogShown = true;
+
+        progressStore.recordResult(binding.view.getLevelId(), binding.view.getStars(), score,
+                binding.view.getElapsedMillis(), moves);
 
         String message = getString(R.string.victory_message, difficultyLabel, elapsedSeconds, moves, score);
 

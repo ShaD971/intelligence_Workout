@@ -44,9 +44,25 @@ public final class GameEngine {
     private boolean won;
 
     public GameEngine(Level level) {
+        this(level, GridScrambler.scramble(level), 0, level.difficulty.startScore, 0L, false);
+    }
+
+    private GameEngine(Level level, int[][] grid, int moves, int score, long elapsedMillis, boolean won) {
         this.level = level;
-        this.grid = GridScrambler.scramble(level);
-        this.score = level.difficulty.startScore;
+        this.grid = grid;
+        this.moves = moves;
+        this.score = score;
+        this.elapsedMillis = elapsedMillis;
+        this.won = won;
+    }
+
+    /**
+     * Restores an in-progress game (e.g. across a screen rotation). Undo history is not
+     * preserved, since only the grid/score/moves/time are persisted across the restart.
+     */
+    public static GameEngine restore(Level level, int[][] grid, int moves, int score,
+                                      long elapsedMillis, boolean won) {
+        return new GameEngine(level, grid, moves, score, elapsedMillis, won);
     }
 
     public Level getLevel() {
@@ -75,6 +91,10 @@ public final class GameEngine {
 
     public int getElapsedSeconds() {
         return (int) (elapsedMillis / 1000);
+    }
+
+    public long getElapsedMillis() {
+        return elapsedMillis;
     }
 
     public boolean isWon() {

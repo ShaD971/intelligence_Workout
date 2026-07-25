@@ -101,6 +101,57 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
         notifyGameState();
     }
 
+    public void restoreState(String levelId, int[] flatGrid, int moves, int score,
+                              long elapsedMillis, boolean won) {
+        Level level = LevelRepository.byId(levelId);
+        int gridSize = level.gridSize;
+        int[][] grid = new int[gridSize][gridSize];
+        for (int row = 0; row < gridSize; row++) {
+            System.arraycopy(flatGrid, row * gridSize, grid[row], 0, gridSize);
+        }
+        engine = GameEngine.restore(level, grid, moves, score, elapsedMillis, won);
+        calculateAnchors();
+        notifyGameState();
+
+        if (cvThread != null && !cvThread.isAlive()) {
+            cvThread.start();
+        }
+    }
+
+    public int[] captureFlatGrid() {
+        int[][] grid = engine.getGrid();
+        int gridSize = engine.getGridSize();
+        int[] flat = new int[gridSize * gridSize];
+        for (int row = 0; row < gridSize; row++) {
+            System.arraycopy(grid[row], 0, flat, row * gridSize, gridSize);
+        }
+        return flat;
+    }
+
+    public String getLevelId() {
+        return engine.getLevel().id;
+    }
+
+    public int getMoves() {
+        return engine.getMoves();
+    }
+
+    public int getScore() {
+        return engine.getScore();
+    }
+
+    public long getElapsedMillis() {
+        return engine.getElapsedMillis();
+    }
+
+    public boolean isGameWon() {
+        return engine.isWon();
+    }
+
+    public int getStars() {
+        return engine.computeStars();
+    }
+
     private void calculateAnchors() {
         int gridSize = engine.getGridSize();
         int width = Math.max(getWidth(), 1);
