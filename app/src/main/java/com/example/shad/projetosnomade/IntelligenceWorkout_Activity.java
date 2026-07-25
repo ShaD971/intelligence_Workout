@@ -17,7 +17,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 public class IntelligenceWorkout_Activity extends AppCompatActivity
         implements IntelligenceWorkoutView.GameStateListener {
 
-    public static final String EXTRA_DIFFICULTY = "com.example.shad.projetosnomade.DIFFICULTY";
+    public static final String EXTRA_LEVEL_ID = "com.example.shad.projetosnomade.LEVEL_ID";
 
     private static final String STATE_LEVEL_ID = "levelId";
     private static final String STATE_GRID = "grid";
@@ -58,7 +58,7 @@ public class IntelligenceWorkout_Activity extends AppCompatActivity
                     savedInstanceState.getBoolean(STATE_WON));
             victoryDialogShown = savedInstanceState.getBoolean(STATE_WON);
         } else {
-            binding.view.setDifficulty(getIntent().getStringExtra(EXTRA_DIFFICULTY));
+            binding.view.setLevel(getIntent().getStringExtra(EXTRA_LEVEL_ID));
         }
         binding.view.setVisibility(View.VISIBLE);
 

@@ -8,7 +8,22 @@
     <string name="difficulty_easy">Facile</string>
     <string name="difficulty_medium">Moyen</string>
     <string name="difficulty_hard">Difficile</string>
-    <string name="action_start">Commencer</string>
+    <string name="stars_total_format">★ %1$d / %2$d</string>
+    <string name="tier_progress_format">%1$d / 9 ★</string>
+    <string name="action_reset_progress">Réinitialiser la progression</string>
+    <string name="reset_progress_confirm_title">Réinitialiser la progression ?</string>
+    <string name="reset_progress_confirm_message">Toutes les étoiles, meilleurs scores et niveaux débloqués seront perdus.</string>
+    <string name="action_confirm">Réinitialiser</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_how_to_play">Comment jouer ?</string>
+    <string name="how_to_play_title">Comment jouer ?</string>
+    <string name="how_to_play_body">Faites glisser une ligne ou une colonne pour la faire tourner et reproduire la grille cible affichée en haut.\n\nChaque coup coûte quelques points, mais finir vite en rapporte beaucoup plus. Reproduisez la cible pour gagner jusqu\'à 3 étoiles selon le nombre de coups utilisés.</string>
+    <string name="content_description_lock">Niveau verrouillé</string>
+
+    <!-- Level select screen -->
+    <string name="level_select_title_format">Niveaux %1$s</string>
+    <string name="content_description_level_preview">Aperçu de la grille cible</string>
+    <string name="best_score_format">Meilleur score : %1$d</string>
 
     <!-- Game screen -->
     <string name="action_reset">Réinitialiser</string>

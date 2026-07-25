@@ -87,6 +87,14 @@ public class IntelligenceWorkoutView extends SurfaceView implements SurfaceHolde
 
     public void setDifficulty(String selectedDifficulty) {
         Level level = LevelRepository.forDifficulty(Difficulty.fromId(selectedDifficulty)).get(0);
+        applyLevel(level);
+    }
+
+    public void setLevel(String levelId) {
+        applyLevel(LevelRepository.byId(levelId));
+    }
+
+    private void applyLevel(Level level) {
         engine = new GameEngine(level);
         calculateAnchors();
         notifyGameState();

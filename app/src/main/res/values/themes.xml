@@ -1,9 +1,13 @@
 <resources>
 
     <style name="Theme.IntelligenceWorkout" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimary">@color/iw_primary</item>
         <item name="colorOnPrimary">@android:color/white</item>
-        <item name="colorSecondary">@color/colorAccent</item>
+        <item name="colorSecondary">@color/iw_accent</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+        <item name="colorSurface">@color/iw_surface</item>
+        <item name="colorOnSurface">@color/iw_on_surface</item>
+        <item name="android:windowBackground">@color/iw_background</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:fontFamily">sans-serif</item>
     </style>

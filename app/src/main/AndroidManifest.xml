@@ -17,9 +17,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".IntelligenceWorkout_Activity">
+        <activity android:name=".LevelSelectActivity" />
 
-        </activity>
+        <activity android:name=".IntelligenceWorkout_Activity" />
 
     </application>
 
